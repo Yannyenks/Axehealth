@@ -45,6 +45,15 @@ export const PERMISSIONS = {
   alertes: {
     manage: ["ADMIN"] as Role[],
   },
+  assurances: {
+    read: ["ADMIN", "COMPTABLE", "CAISSIER", "SECRETAIRE"] as Role[],
+    write: ["ADMIN", "COMPTABLE"] as Role[],
+  },
+  laboratoire: {
+    read: ["ADMIN", "MEDECIN", "BIOLOGISTE", "INFIRMIER"] as Role[],
+    demander: ["ADMIN", "MEDECIN"] as Role[],
+    saisirResultat: ["ADMIN", "BIOLOGISTE"] as Role[],
+  },
 } as const;
 
 export class ForbiddenError extends Error {}

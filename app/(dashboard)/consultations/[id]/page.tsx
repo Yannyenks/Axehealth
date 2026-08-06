@@ -6,8 +6,17 @@ import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+
+interface LabRequest {
+  id: string;
+  type: "LABORATOIRE" | "IMAGERIE";
+  libelle: string;
+  status: "DEMANDE" | "EN_COURS" | "RESULTAT_DISPONIBLE" | "ANNULE";
+  resultat: string | null;
+}
 
 interface PrescriptionItem {
   id: string;
@@ -33,7 +42,15 @@ interface ConsultationDetail {
   medecin: { firstName: string; lastName: string };
   vitalSigns: { temperature: number | null; tensionSys: number | null; tensionDia: number | null; pouls: number | null }[];
   prescriptions: Prescription[];
+  labRequests: LabRequest[];
 }
+
+const LAB_STATUS_LABEL: Record<string, string> = {
+  DEMANDE: "Demandé",
+  EN_COURS: "En cours",
+  RESULTAT_DISPONIBLE: "Résultat disponible",
+  ANNULE: "Annulé",
+};
 
 export default function ConsultationDetailPage({ params }: { params: { id: string } }) {
   const queryClient = useQueryClient();
@@ -46,6 +63,7 @@ export default function ConsultationDetailPage({ params }: { params: { id: strin
   const [diagnosticCim, setDiagnosticCim] = useState("");
   const [vitals, setVitals] = useState({ temperature: "", tensionSys: "", tensionDia: "", pouls: "" });
   const [rx, setRx] = useState({ denomination: "", posologie: "", quantite: "1" });
+  const [exam, setExam] = useState({ type: "LABORATOIRE" as "LABORATOIRE" | "IMAGERIE", libelle: "" });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["consultations", params.id] });
 
@@ -62,6 +80,14 @@ export default function ConsultationDetailPage({ params }: { params: { id: strin
     onSuccess: () => {
       invalidate();
       setRx({ denomination: "", posologie: "", quantite: "1" });
+    },
+  });
+
+  const requestExam = useMutation({
+    mutationFn: () => api.post(`/api/consultations/${params.id}/examens`, exam),
+    onSuccess: () => {
+      invalidate();
+      setExam({ type: "LABORATOIRE", libelle: "" });
     },
   });
 
@@ -182,6 +208,39 @@ export default function ConsultationDetailPage({ params }: { params: { id: strin
               <Input type="number" min="1" placeholder="Qté" value={rx.quantite} onChange={(e) => setRx({ ...rx, quantite: e.target.value })} />
               <Button disabled={!rx.denomination || !rx.posologie || addPrescription.isPending} onClick={() => addPrescription.mutate()}>
                 Ajouter
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Examens (laboratoire / imagerie)</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {consultation.labRequests.map((lr) => (
+            <div key={lr.id} className="rounded-md border p-3 text-sm">
+              <div className="flex items-center justify-between">
+                <p className="font-medium">{lr.type === "LABORATOIRE" ? "Labo" : "Imagerie"} — {lr.libelle}</p>
+                <Badge variant={lr.status === "RESULTAT_DISPONIBLE" ? "success" : lr.status === "ANNULE" ? "destructive" : "secondary"}>
+                  {LAB_STATUS_LABEL[lr.status]}
+                </Badge>
+              </div>
+              {lr.resultat && <p className="mt-1 text-muted-foreground">{lr.resultat}</p>}
+            </div>
+          ))}
+          {consultation.labRequests.length === 0 && <p className="text-sm text-muted-foreground">Aucun examen demandé.</p>}
+
+          {!locked && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+              <Select value={exam.type} onChange={(e) => setExam({ ...exam, type: e.target.value as "LABORATOIRE" | "IMAGERIE" })}>
+                <option value="LABORATOIRE">Laboratoire</option>
+                <option value="IMAGERIE">Imagerie</option>
+              </Select>
+              <Input placeholder="Ex: NFS, radio thorax…" className="sm:col-span-2" value={exam.libelle} onChange={(e) => setExam({ ...exam, libelle: e.target.value })} />
+              <Button disabled={!exam.libelle || requestExam.isPending} onClick={() => requestExam.mutate()}>
+                Demander
               </Button>
             </div>
           )}

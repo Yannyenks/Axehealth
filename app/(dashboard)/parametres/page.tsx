@@ -5,6 +5,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { PERMISSIONS } from "@/lib/rbac";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { MfaCard } from "@/components/settings/mfa-card";
 import { Check } from "lucide-react";
 
 const ALL_ROLES: Role[] = ["ADMIN", "SECRETAIRE", "MEDECIN", "INFIRMIER", "PHARMACIEN", "BIOLOGISTE", "CAISSIER", "COMPTABLE", "RH"];
@@ -50,6 +51,8 @@ export default function ParametresPage() {
           <p><span className="text-muted-foreground">Identifiant : </span>{user?.organization?.slug}</p>
         </CardContent>
       </Card>
+
+      <MfaCard />
 
       <Card>
         <CardHeader>

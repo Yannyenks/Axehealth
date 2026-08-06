@@ -2,6 +2,7 @@ import { Decimal } from "@prisma/client/runtime/library";
 import type { Prisma, StockMovementType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ConflictError, NotFoundError } from "@/lib/api-error";
+import { splitInvoiceAmount } from "@/services/insurance.service";
 import type { SellCounterInput } from "@/lib/validations/pharmacie";
 
 type TxClient = Prisma.TransactionClient;
@@ -126,6 +127,7 @@ export async function sellCounter(params: {
     }
 
     const numero = `PH-${Date.now()}`;
+    const { montantPartPatient, montantPartAssurance, insuranceProviderId } = await splitInvoiceAmount(patient, montantTotal.toNumber());
 
     const invoice = await tx.invoice.create({
       data: {
@@ -134,7 +136,9 @@ export async function sellCounter(params: {
         numero,
         status: "EN_ATTENTE_PAIEMENT",
         montantTotal,
-        montantPartPatient: montantTotal,
+        montantPartPatient,
+        montantPartAssurance,
+        insuranceProviderId,
         createdById,
         items: { create: invoiceItemsData },
       },

@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
         role: true,
         organizationId: true,
         organization: { select: { name: true, slug: true } },
+        totpEnabled: true,
       },
     });
     if (!user) throw new NotFoundError("Utilisateur introuvable");

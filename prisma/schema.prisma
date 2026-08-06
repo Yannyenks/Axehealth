@@ -93,6 +93,14 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  // Authentification à deux facteurs (TOTP, RFC 6238). totpSecret est posé
+  // dès le lancement de l'activation mais totpEnabled ne passe à true
+  // qu'après vérification d'un premier code — évite de verrouiller un
+  // compte sur un secret jamais confirmé côté application cliente.
+  totpSecret      String?
+  totpEnabled     Boolean  @default(false)
+  totpBackupCodes String[] @default([]) // codes de récupération, hashés Argon2id
+
   consultationsAsMedecin Consultation[]     @relation("MedecinConsultations")
   prescriptions          Prescription[]
   appointments           Appointment[]      @relation("AppointmentPractitioner")

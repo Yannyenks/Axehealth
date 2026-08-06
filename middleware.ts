@@ -7,7 +7,16 @@ import { jwtVerify } from "jose";
 // /api/webhooks/* (fournisseurs Mobile Money) et /api/cron/* (Vercel Cron)
 // sont appelés sans JWT — chacun vérifie son propre secret partagé dans le
 // handler (voir lib/integrations et app/api/cron/evaluer-alertes).
-const PUBLIC_PATHS = ["/login", "/signup", "/api/auth/login", "/api/auth/signup", "/api/auth/refresh", "/api/webhooks", "/api/cron"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/signup",
+  "/api/auth/login",
+  "/api/auth/signup",
+  "/api/auth/refresh",
+  "/api/auth/mfa/verifier-login", // pas de session tant que le 2e facteur n'est pas confirmé
+  "/api/webhooks",
+  "/api/cron",
+];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

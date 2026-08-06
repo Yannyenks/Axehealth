@@ -18,9 +18,15 @@ interface Patient {
   sexe: "M" | "F";
   dateNaissance: string;
   phone: string | null;
+  insuranceProvider?: { name: string } | null;
 }
 
-const emptyForm = { firstName: "", lastName: "", sexe: "F" as "M" | "F", dateNaissance: "", phone: "" };
+interface Provider {
+  id: string;
+  name: string;
+}
+
+const emptyForm = { firstName: "", lastName: "", sexe: "F" as "M" | "F", dateNaissance: "", phone: "", insuranceProviderId: "", insuranceNumber: "" };
 
 export default function PatientsPage() {
   const [q, setQ] = useState("");
@@ -33,8 +39,18 @@ export default function PatientsPage() {
     queryFn: () => api.get<{ patients: Patient[] }>(`/api/patients?q=${encodeURIComponent(q)}`),
   });
 
+  const { data: providersData } = useQuery({
+    queryKey: ["assurances", "prestataires"],
+    queryFn: () => api.get<{ providers: Provider[] }>("/api/assurances/prestataires"),
+  });
+
   const createPatient = useMutation({
-    mutationFn: () => api.post("/api/patients", { ...form, dateNaissance: form.dateNaissance }),
+    mutationFn: () =>
+      api.post("/api/patients", {
+        ...form,
+        insuranceProviderId: form.insuranceProviderId || undefined,
+        insuranceNumber: form.insuranceNumber || undefined,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["patients"] });
       setForm(emptyForm);
@@ -78,6 +94,21 @@ export default function PatientsPage() {
               <Label htmlFor="phone">Téléphone</Label>
               <Input id="phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
             </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="insuranceProviderId">Assurance (tiers-payant)</Label>
+              <Select id="insuranceProviderId" value={form.insuranceProviderId} onChange={(e) => setForm({ ...form, insuranceProviderId: e.target.value })}>
+                <option value="">Aucune — 100% à la charge du patient</option>
+                {providersData?.providers.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </Select>
+            </div>
+            {form.insuranceProviderId && (
+              <div className="space-y-1.5">
+                <Label htmlFor="insuranceNumber">N° d'adhérent</Label>
+                <Input id="insuranceNumber" value={form.insuranceNumber} onChange={(e) => setForm({ ...form, insuranceNumber: e.target.value })} />
+              </div>
+            )}
             <div className="flex items-end sm:col-span-2">
               <Button
                 disabled={!form.firstName || !form.lastName || !form.dateNaissance || createPatient.isPending}
@@ -102,12 +133,13 @@ export default function PatientsPage() {
                 <TableHead>Sexe</TableHead>
                 <TableHead>Date de naissance</TableHead>
                 <TableHead>Téléphone</TableHead>
+                <TableHead>Assurance</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">Chargement…</TableCell>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">Chargement…</TableCell>
                 </TableRow>
               )}
               {data?.patients.map((p) => (
@@ -117,11 +149,12 @@ export default function PatientsPage() {
                   <TableCell>{p.sexe}</TableCell>
                   <TableCell>{new Date(p.dateNaissance).toLocaleDateString("fr-FR")}</TableCell>
                   <TableCell>{p.phone ?? "—"}</TableCell>
+                  <TableCell>{p.insuranceProvider?.name ?? "—"}</TableCell>
                 </TableRow>
               ))}
               {data?.patients.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">Aucun patient trouvé</TableCell>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">Aucun patient trouvé</TableCell>
                 </TableRow>
               )}
             </TableBody>

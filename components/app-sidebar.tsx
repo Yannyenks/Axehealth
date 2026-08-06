@@ -15,6 +15,8 @@ import {
   ScrollText,
   Settings,
   BellRing,
+  ShieldCheck,
+  FlaskConical,
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -50,6 +52,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/patients", label: "Patients (DPI)", icon: Users, roles: PERMISSIONS.patients.read },
       { href: "/consultations", label: "Consultations", icon: Stethoscope, roles: PERMISSIONS.consultations.read },
+      { href: "/laboratoire", label: "Laboratoire", icon: FlaskConical, roles: PERMISSIONS.laboratoire.read },
       { href: "/hospitalisation", label: "Hospitalisation", icon: BedDouble, roles: PERMISSIONS.hospitalisation.read },
     ],
   },
@@ -58,6 +61,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/caisse", label: "Caisse", icon: Wallet, roles: PERMISSIONS.caisse.encaisser },
       { href: "/factures", label: "Factures", icon: Receipt, roles: PERMISSIONS.factures.read },
+      { href: "/assurances", label: "Tiers-payant", icon: ShieldCheck, roles: PERMISSIONS.assurances.read },
     ],
   },
   {

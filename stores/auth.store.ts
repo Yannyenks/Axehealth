@@ -9,6 +9,7 @@ export interface AuthUser {
   role: Role;
   organizationId: string;
   organization?: { name: string; slug: string };
+  totpEnabled?: boolean;
 }
 
 interface AuthState {

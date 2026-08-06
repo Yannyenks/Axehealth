@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
             }
           : {}),
       },
+      include: { insuranceProvider: { select: { name: true } } },
       orderBy: { createdAt: "desc" },
       take: 50,
     });

@@ -4,6 +4,8 @@ import type { Role } from "@prisma/client";
 
 const ACCESS_TOKEN_TTL = "15m";
 const REFRESH_TOKEN_TTL = "7d";
+const MFA_CHALLENGE_TTL = "5m";
+const MFA_CHALLENGE_TYPE = "mfa_challenge";
 
 function getSecret(name: "JWT_SECRET" | "JWT_REFRESH_SECRET"): string {
   const value = process.env[name];
@@ -49,6 +51,19 @@ export function verifyAccessToken(token: string): AccessTokenPayload {
 
 export function verifyRefreshToken(token: string): { sub: string } {
   return jwt.verify(token, getSecret("JWT_REFRESH_SECRET")) as { sub: string };
+}
+
+// Jeton intermédiaire émis après mot de passe validé mais avant le second
+// facteur — courte durée de vie, ne porte aucun droit (pas de role/org),
+// juste l'identité à confirmer via /api/auth/mfa/verifier-login.
+export function signMfaChallengeToken(userId: string): string {
+  return jwt.sign({ sub: userId, type: MFA_CHALLENGE_TYPE }, getSecret("JWT_SECRET"), { expiresIn: MFA_CHALLENGE_TTL });
+}
+
+export function verifyMfaChallengeToken(token: string): { sub: string } {
+  const payload = jwt.verify(token, getSecret("JWT_SECRET")) as { sub: string; type?: string };
+  if (payload.type !== MFA_CHALLENGE_TYPE) throw new Error("Invalid challenge token type");
+  return payload;
 }
 
 export function getBearerToken(req: Request): string | null {

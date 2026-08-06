@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NotFoundError } from "@/lib/api-error";
+import { splitInvoiceAmount } from "@/services/insurance.service";
 import type { CreateConsultationInput } from "@/lib/validations/consultation";
 
 // Une consultation payante démarre verrouillée (EN_ATTENTE_CAISSE) et génère
@@ -24,6 +25,8 @@ export async function createConsultationWithInvoice(organizationId: string, crea
     });
 
     if (input.isPayant && input.montant) {
+      const { montantPartPatient, montantPartAssurance, insuranceProviderId } = await splitInvoiceAmount(patient, input.montant);
+
       await tx.invoice.create({
         data: {
           organizationId,
@@ -31,7 +34,9 @@ export async function createConsultationWithInvoice(organizationId: string, crea
           numero: `CS-${Date.now()}`,
           status: "EN_ATTENTE_PAIEMENT",
           montantTotal: input.montant,
-          montantPartPatient: input.montant,
+          montantPartPatient,
+          montantPartAssurance,
+          insuranceProviderId,
           createdById,
           items: {
             create: [
