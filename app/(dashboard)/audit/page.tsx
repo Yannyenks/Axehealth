@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Download } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 
@@ -25,9 +27,17 @@ export default function AuditPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-bold">Journal d'audit</h1>
-        <p className="text-sm text-muted-foreground">Journal immuable de toutes les actions sensibles (100 dernières entrées)</p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-bold">Journal d'audit</h1>
+          <p className="text-sm text-muted-foreground">Journal immuable de toutes les actions sensibles (100 dernières entrées)</p>
+        </div>
+        <a href={`/api/audit?format=csv&action=${encodeURIComponent(action)}`}>
+          <Button variant="outline">
+            <Download className="h-4 w-4" />
+            Exporter CSV
+          </Button>
+        </a>
       </div>
 
       <Input placeholder="Filtrer par type d'action (ex: PAYMENT, CONSULTATION…)" value={action} onChange={(e) => setAction(e.target.value)} className="max-w-md" />

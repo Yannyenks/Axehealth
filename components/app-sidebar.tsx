@@ -14,6 +14,7 @@ import {
   Receipt,
   ScrollText,
   Settings,
+  BellRing,
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -39,7 +40,10 @@ interface NavGroup {
 const NAV_GROUPS: NavGroup[] = [
   {
     label: "Pilotage",
-    items: [{ href: "/", label: "Tableau de bord", icon: LayoutDashboard, roles: PERMISSIONS.dashboards.read }],
+    items: [
+      { href: "/", label: "Tableau de bord", icon: LayoutDashboard, roles: PERMISSIONS.dashboards.read },
+      { href: "/alertes", label: "Alertes", icon: BellRing, roles: PERMISSIONS.alertes.manage },
+    ],
   },
   {
     label: "Soins",

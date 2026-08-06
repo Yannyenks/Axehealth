@@ -27,8 +27,17 @@ function formatFcfa(n: number): string {
   return new Intl.NumberFormat("fr-FR", { notation: "compact", maximumFractionDigits: 1 }).format(n);
 }
 
-export function RevenueAreaChart({ data, poles }: { data: DayEntry[]; poles: string[] }) {
+export function RevenueAreaChart({ data, poles, days }: { data: DayEntry[]; poles: string[]; days: 7 | 30 | 90 }) {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+
+  // Vise ~7 étiquettes visibles quelle que soit l'étendue — au-delà de 7
+  // jours, le format passe du jour de semaine court à "JJ/MM" et seul un
+  // jour sur N est libellé pour éviter la collision de texte.
+  const labelStep = Math.max(1, Math.ceil(data.length / 7));
+  function formatAxisDate(dateStr: string) {
+    const d = new Date(dateStr);
+    return days === 7 ? d.toLocaleDateString("fr-FR", { weekday: "short" }) : d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
+  }
 
   const orderedPoles = useMemo(() => POLE_ORDER.filter((p) => poles.includes(p)).concat(poles.filter((p) => !POLE_ORDER.includes(p))), [poles]);
 
@@ -76,7 +85,7 @@ export function RevenueAreaChart({ data, poles }: { data: DayEntry[]; poles: str
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Recettes par pôle</CardTitle>
-        <p className="text-xs text-muted-foreground">7 derniers jours (FCFA)</p>
+        <p className="text-xs text-muted-foreground">{days} derniers jours (FCFA)</p>
       </CardHeader>
       <CardContent>
         <div className="relative">
@@ -122,11 +131,13 @@ export function RevenueAreaChart({ data, poles }: { data: DayEntry[]; poles: str
               />
             ))}
 
-            {data.map((d, i) => (
-              <text key={d.date} x={xAt(i)} y={HEIGHT - 6} textAnchor="middle" className="fill-muted-foreground text-[9px]">
-                {new Date(d.date).toLocaleDateString("fr-FR", { weekday: "short" })}
-              </text>
-            ))}
+            {data.map((d, i) =>
+              i % labelStep === 0 || i === data.length - 1 ? (
+                <text key={d.date} x={xAt(i)} y={HEIGHT - 6} textAnchor="middle" className="fill-muted-foreground text-[9px]">
+                  {formatAxisDate(d.date)}
+                </text>
+              ) : null,
+            )}
 
             {hoverIndex !== null && (
               <line x1={xAt(hoverIndex)} x2={xAt(hoverIndex)} y1={PAD.top} y2={PAD.top + plotH} stroke="#898781" strokeWidth={1} />

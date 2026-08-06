@@ -94,6 +94,39 @@ export async function getActivityReport(organizationId: string, from: Date, to: 
   };
 }
 
+// Série des recettes par pôle sur `days` jours — utilisée par le graphique
+// dédié (filtre de période 7/30/90j indépendant du reste du dashboard, voir
+// GET /api/dashboards/revenue-series).
+export async function getRevenueSeries(organizationId: string, days: 7 | 30 | 90) {
+  const startDate = dayRange(days - 1).from;
+
+  const revenueItems = await prisma.invoiceItem.findMany({
+    where: { invoice: { organizationId, createdAt: { gte: startDate } } },
+    select: { pole: true, montant: true, invoice: { select: { createdAt: true } } },
+  });
+
+  const dayBuckets: { date: string; values: Record<string, Decimal> }[] = Array.from({ length: days }, (_, i) => {
+    const d = dayRange(days - 1 - i).from;
+    return { date: d.toISOString().slice(0, 10), values: {} };
+  });
+  const poles = new Set<string>();
+  for (const item of revenueItems) {
+    const dateKey = item.invoice.createdAt.toISOString().slice(0, 10);
+    const bucket = dayBuckets.find((b) => b.date === dateKey);
+    if (!bucket) continue;
+    poles.add(item.pole);
+    bucket.values[item.pole] = (bucket.values[item.pole] ?? new Decimal(0)).plus(item.montant);
+  }
+
+  return {
+    revenueSeries: dayBuckets.map((b) => ({
+      date: b.date,
+      ...Object.fromEntries([...poles].map((pole) => [pole, (b.values[pole] ?? new Decimal(0)).toString()])),
+    })),
+    poles: [...poles],
+  };
+}
+
 // Vue d'ensemble du tableau de bord direction: chaque delta n'est calculé
 // que lorsqu'une vraie base de comparaison existe (jour précédent) — pas de
 // tendance inventée pour les métriques sans historique exploitable
@@ -101,21 +134,10 @@ export async function getActivityReport(organizationId: string, from: Date, to: 
 export async function getDashboardOverview(organizationId: string) {
   const today = dayRange(0);
   const yesterday = dayRange(1);
-  const sevenDaysAgo = dayRange(6).from;
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  const [
-    invoicesToday,
-    invoicesYesterday,
-    consultationsToday,
-    consultationsYesterday,
-    beds,
-    rooms,
-    claimsEnCours,
-    revenueItems,
-    payments,
-  ] = await Promise.all([
+  const [invoicesToday, invoicesYesterday, consultationsToday, consultationsYesterday, beds, rooms, claimsEnCours, payments] = await Promise.all([
     prisma.invoice.findMany({ where: { organizationId, createdAt: { gte: today.from, lt: today.to } }, select: { montantTotal: true } }),
     prisma.invoice.findMany({ where: { organizationId, createdAt: { gte: yesterday.from, lt: yesterday.to } }, select: { montantTotal: true } }),
     prisma.consultation.count({ where: { organizationId, status: "TERMINEE", endedAt: { gte: today.from, lt: today.to } } }),
@@ -126,10 +148,6 @@ export async function getDashboardOverview(organizationId: string) {
       include: { department: { select: { name: true } }, beds: { select: { status: true } } },
     }),
     prisma.insuranceClaim.findMany({ where: { organizationId, status: { in: ["EN_PREPARATION", "TRANSMIS"] } }, select: { montant: true } }),
-    prisma.invoiceItem.findMany({
-      where: { invoice: { organizationId, createdAt: { gte: sevenDaysAgo } } },
-      select: { pole: true, montant: true, invoice: { select: { createdAt: true } } },
-    }),
     prisma.payment.findMany({
       where: { organizationId, validatedAt: { gte: thirtyDaysAgo } },
       select: { mode: true, montant: true },
@@ -143,25 +161,6 @@ export async function getDashboardOverview(organizationId: string) {
   const tauxOccupationLits = beds.length > 0 ? Number(((litsOccupes / beds.length) * 100).toFixed(1)) : 0;
 
   const creancesAssurances = claimsEnCours.reduce((sum, c) => sum.plus(c.montant), new Decimal(0));
-
-  // Série des 7 derniers jours, une clé par pôle réellement facturé (pas de
-  // pôle inventé si rien n'a encore été facturé sur cette activité).
-  const dayBuckets: { date: string; values: Record<string, Decimal> }[] = Array.from({ length: 7 }, (_, i) => {
-    const d = dayRange(6 - i).from;
-    return { date: d.toISOString().slice(0, 10), values: {} };
-  });
-  const poles = new Set<string>();
-  for (const item of revenueItems) {
-    const dateKey = item.invoice.createdAt.toISOString().slice(0, 10);
-    const bucket = dayBuckets.find((b) => b.date === dateKey);
-    if (!bucket) continue;
-    poles.add(item.pole);
-    bucket.values[item.pole] = (bucket.values[item.pole] ?? new Decimal(0)).plus(item.montant);
-  }
-  const revenueSeries = dayBuckets.map((b) => ({
-    date: b.date,
-    ...Object.fromEntries([...poles].map((pole) => [pole, (b.values[pole] ?? new Decimal(0)).toString()])),
-  }));
 
   const paymentTotal = payments.reduce((sum, p) => sum.plus(p.montant), new Decimal(0));
   const paymentByMode = new Map<string, Decimal>();
@@ -207,8 +206,6 @@ export async function getDashboardOverview(organizationId: string) {
       occupationLits: { total: beds.length, occupes: litsOccupes, tauxPourcent: tauxOccupationLits },
       creancesAssurances: creancesAssurances.toString(),
     },
-    revenueSeries,
-    poles: [...poles],
     paymentBreakdown,
     occupationParService,
     alertes,

@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { FileBarChart } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth.store";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { StatTile } from "@/components/dashboard/stat-tile";
 import { RevenueAreaChart } from "@/components/dashboard/revenue-area-chart";
 import { PaymentBreakdownBar } from "@/components/dashboard/payment-breakdown-bar";
@@ -21,25 +23,37 @@ interface Overview {
     occupationLits: { total: number; occupes: number; tauxPourcent: number };
     creancesAssurances: string;
   };
-  revenueSeries: { date: string; [pole: string]: string }[];
-  poles: string[];
   paymentBreakdown: { mode: string; montant: string; pourcent: number }[];
   occupationParService: { service: string; occupes: number; total: number }[];
   alertes: { type: "PEREMPTION" | "REAPPRO"; label: string; detail: string }[];
 }
 
+interface RevenueSeriesResponse {
+  revenueSeries: { date: string; [pole: string]: string }[];
+  poles: string[];
+}
+
+const PERIOD_PRESETS = [7, 30, 90] as const;
+
 export default function DashboardHome() {
   const { user } = useAuthStore();
+  const [days, setDays] = useState<(typeof PERIOD_PRESETS)[number]>(7);
+
   const { data, isLoading } = useQuery({
     queryKey: ["dashboards", "overview"],
     queryFn: () => api.get<{ overview: Overview }>("/api/dashboards/overview"),
+  });
+
+  const { data: revenueData, isFetching: isRevenueFetching } = useQuery({
+    queryKey: ["dashboards", "revenue-series", days],
+    queryFn: () => api.get<RevenueSeriesResponse>(`/api/dashboards/revenue-series?days=${days}`),
   });
 
   if (isLoading || !data) {
     return <p className="text-muted-foreground">Chargement des indicateurs…</p>;
   }
 
-  const { statTiles, revenueSeries, poles, paymentBreakdown, occupationParService, alertes } = data.overview;
+  const { statTiles, paymentBreakdown, occupationParService, alertes } = data.overview;
 
   return (
     <div className="space-y-6">
@@ -59,25 +73,48 @@ export default function DashboardHome() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile label="Chiffre d'affaires du jour" value={Number(statTiles.caFactureToday)} delta={{ pct: statTiles.caFactureTodayDeltaPct, comparedTo: "vs hier", upIsGood: true }} />
+        <StatTile
+          label="Chiffre d'affaires du jour"
+          value={Number(statTiles.caFactureToday)}
+          delta={{ pct: statTiles.caFactureTodayDeltaPct, comparedTo: "vs hier", upIsGood: true }}
+          href="/factures"
+        />
         <StatTile
           label="Taux d'occupation des lits"
           value={statTiles.occupationLits.tauxPourcent}
           isCurrency={false}
           suffix="%"
+          href="/hospitalisation"
         />
-        <StatTile label="Créances assurances" value={Number(statTiles.creancesAssurances)} />
+        <StatTile label="Créances assurances" value={Number(statTiles.creancesAssurances)} href="/factures" />
         <StatTile
           label="Consultations réalisées"
           value={statTiles.consultationsToday}
           isCurrency={false}
           delta={{ pct: statTiles.consultationsTodayDeltaPct, comparedTo: "vs hier", upIsGood: true }}
+          href="/consultations"
         />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <RevenueAreaChart data={revenueSeries} poles={poles} />
+        <div className="space-y-2 lg:col-span-2">
+          <div className="flex gap-1">
+            {PERIOD_PRESETS.map((preset) => (
+              <button
+                key={preset}
+                onClick={() => setDays(preset)}
+                className={cn(
+                  "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                  days === preset ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted",
+                )}
+              >
+                {preset} j
+              </button>
+            ))}
+          </div>
+          <div className={cn("transition-opacity", isRevenueFetching && "opacity-60")}>
+            <RevenueAreaChart data={revenueData?.revenueSeries ?? []} poles={revenueData?.poles ?? []} days={days} />
+          </div>
         </div>
         <PaymentBreakdownBar data={paymentBreakdown} />
       </div>

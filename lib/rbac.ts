@@ -42,6 +42,9 @@ export const PERMISSIONS = {
   notifications: {
     send: ["ADMIN", "SECRETAIRE"] as Role[],
   },
+  alertes: {
+    manage: ["ADMIN"] as Role[],
+  },
 } as const;
 
 export class ForbiddenError extends Error {}

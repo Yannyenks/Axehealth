@@ -51,6 +51,7 @@ model Organization {
   cashRegisters     CashRegister[]
   cashSessions      CashSession[]
   insuranceProviders InsuranceProvider[]
+  alertRules        AlertRule[]
 
   @@index([slug])
 }
@@ -104,6 +105,7 @@ model User {
   payroll                Payroll[]
   auditLogs              AuditLog[]
   stockMovements         StockMovement[]
+  alertRulesCreated      AlertRule[]
 
   @@index([organizationId])
   @@index([organizationId, role])
@@ -856,4 +858,67 @@ model AuditLog {
   @@index([organizationId])
   @@index([organizationId, entityType, entityId])
   @@index([organizationId, action])
+}
+
+// ============================================================================
+// ALERTES CONFIGURABLES (module Dashboards & Reporting)
+// ============================================================================
+
+// Métriques directement calculables par services/dashboard.service.ts et
+// services/pharmacie.service.ts — ajouter une métrique ici nécessite
+// d'ajouter son évaluation dans services/alert-rule.service.ts.
+enum AlertMetric {
+  CA_JOUR
+  CREANCES_ASSURANCES
+  TAUX_OCCUPATION_LITS
+  STOCK_JOURS_AVANT_PEREMPTION
+  STOCK_SOUS_SEUIL_REAPPRO
+  ECART_CAISSE_CLOTURE
+}
+
+enum AlertOperator {
+  SUPERIEUR_A
+  INFERIEUR_A
+}
+
+// Seuils définis par le directeur lui-même (pas de seuil codé en dur) —
+// évalués périodiquement par un job (voir services/alert-rule.service.ts) et
+// journalisés dans AlertTriggerLog à chaque déclenchement.
+model AlertRule {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  label     String
+  metric    AlertMetric
+  operator  AlertOperator
+  threshold Decimal @db.Decimal(14, 2)
+  isActive  Boolean @default(true)
+
+  notifyRoles Role[] // rôles destinataires de la notification in-app
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  triggerLogs AlertTriggerLog[]
+
+  @@index([organizationId])
+  @@index([organizationId, isActive])
+}
+
+// Historique des déclenchements — permet au directeur de voir la fréquence
+// et l'évolution d'une alerte dans le temps, pas seulement son état actuel.
+model AlertTriggerLog {
+  id          String    @id @default(cuid())
+  alertRuleId String
+  alertRule   AlertRule @relation(fields: [alertRuleId], references: [id], onDelete: Cascade)
+
+  value       Decimal  @db.Decimal(14, 2)
+  triggeredAt DateTime @default(now())
+
+  @@index([alertRuleId])
+  @@index([alertRuleId, triggeredAt])
 }

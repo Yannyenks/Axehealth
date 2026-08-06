@@ -1,4 +1,5 @@
-import { TrendingUp, TrendingDown } from "lucide-react";
+import Link from "next/link";
+import { TrendingUp, TrendingDown, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -13,9 +14,10 @@ interface StatTileProps {
   isCurrency?: boolean;
   suffix?: string;
   delta?: { pct: number | null; comparedTo: string; upIsGood?: boolean };
+  href?: string;
 }
 
-export function StatTile({ label, value, isCurrency = true, suffix, delta }: StatTileProps) {
+export function StatTile({ label, value, isCurrency = true, suffix, delta, href }: StatTileProps) {
   const displayValue = isCurrency
     ? formatCompactXaf(value)
     : `${new Intl.NumberFormat("fr-FR").format(value)}${suffix ?? ""}`;
@@ -25,18 +27,29 @@ export function StatTile({ label, value, isCurrency = true, suffix, delta }: Sta
   const upIsGood = delta?.upIsGood ?? true;
   const isPositive = isUp === upIsGood;
 
-  return (
-    <Card>
-      <CardContent className="p-5">
+  const content = (
+    <CardContent className="p-5">
+      <div className="flex items-start justify-between">
         <p className="text-sm text-muted-foreground">{label}</p>
-        <p className="mt-1 font-display text-2xl font-semibold text-foreground">{displayValue}</p>
-        {showDelta && (
-          <p className={cn("mt-1 flex items-center gap-1 text-xs font-medium", isPositive ? "text-success" : "text-destructive")}>
-            {isUp ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
-            {isUp ? "+" : ""}{delta!.pct}% {delta!.comparedTo}
-          </p>
-        )}
-      </CardContent>
-    </Card>
+        {href && <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />}
+      </div>
+      <p className="mt-1 font-display text-2xl font-semibold text-foreground">{displayValue}</p>
+      {showDelta && (
+        <p className={cn("mt-1 flex items-center gap-1 text-xs font-medium", isPositive ? "text-success" : "text-destructive")}>
+          {isUp ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+          {isUp ? "+" : ""}{delta!.pct}% {delta!.comparedTo}
+        </p>
+      )}
+    </CardContent>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className="group">
+        <Card className="transition-colors hover:border-primary/40 hover:bg-accent/40">{content}</Card>
+      </Link>
+    );
+  }
+
+  return <Card>{content}</Card>;
 }

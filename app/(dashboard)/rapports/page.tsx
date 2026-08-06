@@ -1,7 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { Download } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 
@@ -25,11 +27,19 @@ export default function RapportsPage() {
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-bold">Rapport d'activité RMA / SNIS</h1>
-        <p className="text-sm text-muted-foreground">
-          Compteurs bruts du mois en cours — à reporter sur le formulaire statistique réglementaire local.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-bold">Rapport d'activité RMA / SNIS</h1>
+          <p className="text-sm text-muted-foreground">
+            Compteurs bruts du mois en cours — à reporter sur le formulaire statistique réglementaire local.
+          </p>
+        </div>
+        <a href="/api/dashboards/rapports?format=csv">
+          <Button variant="outline">
+            <Download className="h-4 w-4" />
+            Exporter CSV
+          </Button>
+        </a>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
