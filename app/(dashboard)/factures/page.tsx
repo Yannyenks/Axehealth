@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth.store";
@@ -148,7 +149,9 @@ export default function FacturesPage() {
               )}
               {data?.invoices.map((invoice) => (
                 <TableRow key={invoice.id}>
-                  <TableCell className="font-medium">{invoice.numero}</TableCell>
+                  <TableCell className="font-medium">
+                    <Link href={`/factures/${invoice.id}`} className="text-primary hover:underline">{invoice.numero}</Link>
+                  </TableCell>
                   <TableCell>{invoice.patient.firstName} {invoice.patient.lastName}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {invoice.items.map((item) => item.libelle).join(", ")}

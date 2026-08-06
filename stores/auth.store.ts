@@ -10,6 +10,7 @@ export interface AuthUser {
   organizationId: string;
   organization?: { name: string; slug: string };
   totpEnabled?: boolean;
+  isSuperAdmin?: boolean;
 }
 
 interface AuthState {

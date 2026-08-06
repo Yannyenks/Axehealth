@@ -64,6 +64,13 @@ export const PERMISSIONS = {
     demander: ALL_ROLES, // chacun demande son propre congé, quel que soit son rôle
     gerer: ["ADMIN", "RH"] as Role[], // approbation/rejet des congés d'autrui
   },
+  satisfaction: {
+    enregistrer: ["ADMIN", "SECRETAIRE", "CAISSIER"] as Role[], // recueilli à l'accueil/à la sortie
+    read: ["ADMIN"] as Role[], // vue agrégée réservée à la direction
+  },
+  groupe: {
+    read: ["ADMIN"] as Role[], // comparatif inter-cliniques réservé à la direction
+  },
 } as const;
 
 export class ForbiddenError extends Error {}
@@ -71,6 +78,16 @@ export class ForbiddenError extends Error {}
 export function requireRole(session: AccessTokenPayload, allowed: readonly Role[]): void {
   if (!allowed.includes(session.role)) {
     throw new ForbiddenError(`Role ${session.role} is not permitted for this action`);
+  }
+}
+
+// Le super-admin opère au niveau plateforme (voir /api/superadmin), en plus
+// de son rôle métier normal — c'est un drapeau distinct de la matrice RBAC
+// par organisation, jamais un rôle qui donnerait implicitement des droits
+// dans une organisation qui n'est pas la sienne.
+export function requireSuperAdmin(session: AccessTokenPayload): void {
+  if (!session.isSuperAdmin) {
+    throw new ForbiddenError("Accès réservé aux super-administrateurs de la plateforme");
   }
 }
 

@@ -18,6 +18,8 @@ import {
   ShieldCheck,
   FlaskConical,
   LogOut,
+  Building2,
+  Network,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api-client";
@@ -29,6 +31,7 @@ interface NavItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   roles: readonly Role[];
+  superAdminOnly?: boolean;
 }
 
 interface NavGroup {
@@ -74,7 +77,12 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/rh", label: "RH & congés", icon: UserCog, roles: PERMISSIONS.conges.demander },
       { href: "/audit", label: "Journal d'audit", icon: ScrollText, roles: ["ADMIN"] },
       { href: "/parametres", label: "Paramètres", icon: Settings, roles: ["ADMIN"] },
+      { href: "/groupe", label: "Comparatif inter-cliniques", icon: Network, roles: PERMISSIONS.groupe.read },
     ],
+  },
+  {
+    label: "Plateforme",
+    items: [{ href: "/super-admin", label: "Organisations (super-admin)", icon: Building2, roles: [], superAdminOnly: true }],
   },
 ];
 
@@ -86,7 +94,7 @@ export function AppSidebar() {
 
   const groups = NAV_GROUPS.map((group) => ({
     ...group,
-    items: group.items.filter((item) => item.roles.includes(user.role)),
+    items: group.items.filter((item) => (item.superAdminOnly ? user.isSuperAdmin : item.roles.includes(user.role))),
   })).filter((group) => group.items.length > 0);
 
   async function handleLogout() {
@@ -96,7 +104,7 @@ export function AppSidebar() {
   }
 
   return (
-    <aside className="flex h-screen w-64 flex-col overflow-y-auto bg-sidebar text-sidebar-foreground">
+    <aside className="flex h-screen w-64 flex-col overflow-y-auto bg-sidebar text-sidebar-foreground print:hidden">
       <div className="flex items-center gap-2 px-5 py-6">
         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">A</div>
         <div>

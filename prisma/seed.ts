@@ -22,19 +22,19 @@ async function main() {
   const pinHash = await hashPin(DEFAULT_PIN);
 
   const users = [
-    { email: "admin@axehealth.demo", firstName: "Admin", lastName: "Système", role: "ADMIN" as const },
-    { email: "medecin@axehealth.demo", firstName: "Jean", lastName: "Medecin", role: "MEDECIN" as const },
-    { email: "caissier1@axehealth.demo", firstName: "Alice", lastName: "Caisse", role: "CAISSIER" as const },
-    { email: "caissier2@axehealth.demo", firstName: "Bernard", lastName: "Caisse", role: "CAISSIER" as const },
-    { email: "pharmacien@axehealth.demo", firstName: "Claire", lastName: "Pharma", role: "PHARMACIEN" as const },
-    { email: "infirmier@axehealth.demo", firstName: "David", lastName: "Soins", role: "INFIRMIER" as const },
-    { email: "secretaire@axehealth.demo", firstName: "Estelle", lastName: "Accueil", role: "SECRETAIRE" as const },
+    { email: "admin@axehealth.demo", firstName: "Admin", lastName: "Système", role: "ADMIN" as const, isSuperAdmin: true },
+    { email: "medecin@axehealth.demo", firstName: "Jean", lastName: "Medecin", role: "MEDECIN" as const, isSuperAdmin: false },
+    { email: "caissier1@axehealth.demo", firstName: "Alice", lastName: "Caisse", role: "CAISSIER" as const, isSuperAdmin: false },
+    { email: "caissier2@axehealth.demo", firstName: "Bernard", lastName: "Caisse", role: "CAISSIER" as const, isSuperAdmin: false },
+    { email: "pharmacien@axehealth.demo", firstName: "Claire", lastName: "Pharma", role: "PHARMACIEN" as const, isSuperAdmin: false },
+    { email: "infirmier@axehealth.demo", firstName: "David", lastName: "Soins", role: "INFIRMIER" as const, isSuperAdmin: false },
+    { email: "secretaire@axehealth.demo", firstName: "Estelle", lastName: "Accueil", role: "SECRETAIRE" as const, isSuperAdmin: false },
   ];
 
   for (const user of users) {
     await prisma.user.upsert({
       where: { email: user.email },
-      update: {},
+      update: { isSuperAdmin: user.isSuperAdmin },
       create: {
         organizationId: organization.id,
         email: user.email,
@@ -43,6 +43,7 @@ async function main() {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
+        isSuperAdmin: user.isSuperAdmin,
       },
     });
   }

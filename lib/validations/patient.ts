@@ -14,6 +14,13 @@ export const createPatientSchema = z.object({
   insuranceProviderId: z.string().cuid().optional(),
   insuranceNumber: z.string().max(50).optional(),
   tiersPayantRate: z.number().int().min(0).max(100).optional(),
+  antecedents: z
+    .object({
+      familiaux: z.string().max(1000).optional(),
+      chirurgicaux: z.string().max(1000).optional(),
+      medicaux: z.string().max(1000).optional(),
+    })
+    .optional(),
   force: z.boolean().optional(), // ignore l'alerte de doublon et crée quand même
 });
 

@@ -27,7 +27,12 @@ export default function LoginPage() {
     setLoading(false);
 
     if (!res.ok) {
-      setError("Identifiants invalides");
+      if (res.status === 423) {
+        const body = await res.json().catch(() => null);
+        setError(body?.message ?? "Compte temporairement verrouillé");
+      } else {
+        setError("Identifiants invalides");
+      }
       return;
     }
 

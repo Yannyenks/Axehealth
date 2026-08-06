@@ -8,7 +8,7 @@ import { prisma } from "./prisma";
 // pose le cookie et fait tourner le refresh token, pour que les deux
 // chemins restent strictement équivalents en sécurité.
 export async function issueSession(user: User): Promise<NextResponse> {
-  const accessToken = signAccessToken({ sub: user.id, organizationId: user.organizationId, role: user.role });
+  const accessToken = signAccessToken({ sub: user.id, organizationId: user.organizationId, role: user.role, isSuperAdmin: user.isSuperAdmin });
   const refreshToken = signRefreshToken(user.id);
 
   await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date(), refreshToken } });
@@ -21,6 +21,7 @@ export async function issueSession(user: User): Promise<NextResponse> {
       lastName: user.lastName,
       role: user.role,
       organizationId: user.organizationId,
+      isSuperAdmin: user.isSuperAdmin,
     },
     accessToken,
   });

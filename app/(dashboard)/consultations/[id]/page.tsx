@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Printer } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { useAuthStore } from "@/stores/auth.store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,7 +40,7 @@ interface ConsultationDetail {
   motif: string | null;
   diagnostic: string | null;
   diagnosticCim: string | null;
-  patient: { firstName: string; lastName: string; patientNumber: string; allergies: string[] };
+  patient: { id: string; firstName: string; lastName: string; patientNumber: string; allergies: string[] };
   medecin: { firstName: string; lastName: string };
   vitalSigns: {
     temperature: number | null;
@@ -71,7 +73,10 @@ const LAB_STATUS_LABEL: Record<string, string> = {
   ANNULE: "Annulé",
 };
 
+const CAN_RECORD_SATISFACTION = ["ADMIN", "SECRETAIRE", "CAISSIER"];
+
 export default function ConsultationDetailPage({ params }: { params: { id: string } }) {
+  const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["consultations", params.id],
@@ -83,6 +88,8 @@ export default function ConsultationDetailPage({ params }: { params: { id: strin
   const [vitals, setVitals] = useState({ temperature: "", tensionSys: "", tensionDia: "", pouls: "", poids: "", taille: "" });
   const [rx, setRx] = useState({ denomination: "", posologie: "", quantite: "1" });
   const [exam, setExam] = useState({ type: "LABORATOIRE" as "LABORATOIRE" | "IMAGERIE", libelle: "" });
+  const [satisfactionScore, setSatisfactionScore] = useState<number | null>(null);
+  const [satisfactionSent, setSatisfactionSent] = useState(false);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["consultations", params.id] });
 
@@ -108,6 +115,12 @@ export default function ConsultationDetailPage({ params }: { params: { id: strin
       invalidate();
       setExam({ type: "LABORATOIRE", libelle: "" });
     },
+  });
+
+  const recordSatisfaction = useMutation({
+    mutationFn: (params_: { patientId: string; score: number }) =>
+      api.post("/api/satisfaction", { patientId: params_.patientId, consultationId: params.id, score: params_.score }),
+    onSuccess: () => setSatisfactionSent(true),
   });
 
   if (isLoading || !data) return <p className="text-muted-foreground">Chargement…</p>;
@@ -235,8 +248,14 @@ export default function ConsultationDetailPage({ params }: { params: { id: strin
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base">Ordonnance</CardTitle>
+          {consultation.prescriptions.length > 0 && (
+            <Button size="sm" variant="outline" className="print:hidden" onClick={() => window.print()}>
+              <Printer className="h-4 w-4" />
+              Imprimer
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           {consultation.prescriptions.flatMap((p) => p.items).map((item) => (
@@ -292,6 +311,41 @@ export default function ConsultationDetailPage({ params }: { params: { id: strin
           )}
         </CardContent>
       </Card>
+
+      {consultation.status === "TERMINEE" && user && CAN_RECORD_SATISFACTION.includes(user.role) && (
+        <Card className="print:hidden">
+          <CardHeader>
+            <CardTitle className="text-base">Satisfaction du patient</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {satisfactionSent ? (
+              <p className="text-sm text-success">Merci, le retour a été enregistré.</p>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">Sur 10, quelle est la probabilité que ce patient recommande la clinique ?</p>
+                <div className="flex gap-1">
+                  {Array.from({ length: 11 }, (_, score) => (
+                    <button
+                      key={score}
+                      onClick={() => setSatisfactionScore(score)}
+                      className={`h-9 w-9 rounded-md border text-sm font-medium ${satisfactionScore === score ? "border-primary bg-primary text-primary-foreground" : "border-input hover:bg-accent"}`}
+                    >
+                      {score}
+                    </button>
+                  ))}
+                </div>
+                <Button
+                  size="sm"
+                  disabled={satisfactionScore === null || recordSatisfaction.isPending}
+                  onClick={() => recordSatisfaction.mutate({ patientId: consultation.patient.id, score: satisfactionScore! })}
+                >
+                  Envoyer
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

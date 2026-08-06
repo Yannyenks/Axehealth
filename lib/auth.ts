@@ -17,6 +17,7 @@ export interface AccessTokenPayload {
   sub: string; // userId
   organizationId: string;
   role: Role;
+  isSuperAdmin?: boolean;
 }
 
 export async function hashPassword(plain: string): Promise<string> {

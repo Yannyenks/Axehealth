@@ -13,6 +13,13 @@ import { RevenueAreaChart } from "@/components/dashboard/revenue-area-chart";
 import { PaymentBreakdownBar } from "@/components/dashboard/payment-breakdown-bar";
 import { OccupancyByDepartment } from "@/components/dashboard/occupancy-by-department";
 import { AlertsPanel } from "@/components/dashboard/alerts-panel";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+interface SatisfactionStats {
+  totalReponses: number;
+  nps: number | null;
+  scoreMoyen: number | null;
+}
 
 interface Overview {
   statTiles: {
@@ -47,6 +54,11 @@ export default function DashboardHome() {
   const { data: revenueData, isFetching: isRevenueFetching } = useQuery({
     queryKey: ["dashboards", "revenue-series", days],
     queryFn: () => api.get<RevenueSeriesResponse>(`/api/dashboards/revenue-series?days=${days}`),
+  });
+
+  const { data: satisfactionData } = useQuery({
+    queryKey: ["satisfaction"],
+    queryFn: () => api.get<{ stats: SatisfactionStats }>("/api/satisfaction"),
   });
 
   if (isLoading || !data) {
@@ -119,9 +131,27 @@ export default function DashboardHome() {
         <PaymentBreakdownBar data={paymentBreakdown} />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <OccupancyByDepartment data={occupationParService} />
         <AlertsPanel data={alertes} />
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Satisfaction patient (NPS)</CardTitle>
+            <p className="text-xs text-muted-foreground">Mois en cours</p>
+          </CardHeader>
+          <CardContent>
+            {satisfactionData?.stats.nps === null || satisfactionData?.stats.nps === undefined ? (
+              <p className="text-sm text-muted-foreground">Aucune réponse ce mois-ci.</p>
+            ) : (
+              <>
+                <p className="font-display text-3xl font-semibold">{satisfactionData.stats.nps}</p>
+                <p className="text-sm text-muted-foreground">
+                  {satisfactionData.stats.totalReponses} réponse{satisfactionData.stats.totalReponses > 1 ? "s" : ""} · score moyen {satisfactionData.stats.scoreMoyen}/10
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

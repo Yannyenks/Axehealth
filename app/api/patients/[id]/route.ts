@@ -5,7 +5,7 @@ import { requireRole, assertSameOrganization, PERMISSIONS } from "@/lib/rbac";
 import { handleApiError, NotFoundError } from "@/lib/api-error";
 import { writeAuditLog, ipFromRequest } from "@/lib/audit";
 import { updatePatientSchema } from "@/lib/validations/patient";
-import { updatePatient } from "@/services/patient.service";
+import { updatePatient, decryptAntecedents } from "@/services/patient.service";
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     if (!patient) throw new NotFoundError("Patient introuvable");
     assertSameOrganization(session, patient.organizationId);
 
-    return NextResponse.json({ patient });
+    return NextResponse.json({ patient: { ...patient, antecedents: decryptAntecedents(patient.antecedents) } });
   } catch (error) {
     return handleApiError(error);
   }

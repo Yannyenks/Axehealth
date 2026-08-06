@@ -35,7 +35,18 @@ interface DuplicateMatch {
   lastName: string;
 }
 
-const emptyForm = { firstName: "", lastName: "", sexe: "F" as "M" | "F", dateNaissance: "", phone: "", insuranceProviderId: "", insuranceNumber: "" };
+const emptyForm = {
+  firstName: "",
+  lastName: "",
+  sexe: "F" as "M" | "F",
+  dateNaissance: "",
+  phone: "",
+  insuranceProviderId: "",
+  insuranceNumber: "",
+  antecedentsFamiliaux: "",
+  antecedentsChirurgicaux: "",
+  antecedentsMedicaux: "",
+};
 
 export default function PatientsPage() {
   const [q, setQ] = useState("");
@@ -57,13 +68,22 @@ export default function PatientsPage() {
   });
 
   const createPatient = useMutation({
-    mutationFn: (force?: boolean) =>
-      api.post("/api/patients", {
+    mutationFn: (force?: boolean) => {
+      const hasAntecedents = form.antecedentsFamiliaux || form.antecedentsChirurgicaux || form.antecedentsMedicaux;
+      return api.post("/api/patients", {
         ...form,
         insuranceProviderId: form.insuranceProviderId || undefined,
         insuranceNumber: form.insuranceNumber || undefined,
+        antecedents: hasAntecedents
+          ? {
+              familiaux: form.antecedentsFamiliaux || undefined,
+              chirurgicaux: form.antecedentsChirurgicaux || undefined,
+              medicaux: form.antecedentsMedicaux || undefined,
+            }
+          : undefined,
         force,
-      }),
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["patients"] });
       setForm(emptyForm);
@@ -136,6 +156,22 @@ export default function PatientsPage() {
                 <Input id="insuranceNumber" value={form.insuranceNumber} onChange={(e) => setForm({ ...form, insuranceNumber: e.target.value })} />
               </div>
             )}
+
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label className="text-sm text-muted-foreground">Antécédents médicaux (chiffrés au repos)</Label>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="antecedentsFamiliaux">Familiaux</Label>
+              <Input id="antecedentsFamiliaux" value={form.antecedentsFamiliaux} onChange={(e) => setForm({ ...form, antecedentsFamiliaux: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="antecedentsChirurgicaux">Chirurgicaux</Label>
+              <Input id="antecedentsChirurgicaux" value={form.antecedentsChirurgicaux} onChange={(e) => setForm({ ...form, antecedentsChirurgicaux: e.target.value })} />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="antecedentsMedicaux">Médicaux</Label>
+              <Input id="antecedentsMedicaux" value={form.antecedentsMedicaux} onChange={(e) => setForm({ ...form, antecedentsMedicaux: e.target.value })} />
+            </div>
 
             {duplicates && duplicates.length > 0 && (
               <div className="space-y-2 rounded-md border border-warning bg-warning/10 p-3 sm:col-span-2">

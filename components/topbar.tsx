@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { useAuthStore } from "@/stores/auth.store";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 function initials(firstName: string, lastName: string): string {
   return `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase();
@@ -22,7 +23,7 @@ export function Topbar() {
   }
 
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-card px-6">
+    <header className="flex h-16 items-center justify-between border-b bg-card px-6 print:hidden">
       <form onSubmit={handleSearch} className="relative w-full max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
@@ -34,6 +35,7 @@ export function Topbar() {
       </form>
 
       <div className="flex items-center gap-3">
+        <ThemeToggle />
         <div className="text-right">
           <p className="text-sm font-medium leading-tight text-foreground">{user.firstName} {user.lastName}</p>
           <p className="text-xs leading-tight text-muted-foreground">{user.organization?.name}</p>

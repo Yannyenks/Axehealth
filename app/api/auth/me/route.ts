@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
         organizationId: true,
         organization: { select: { name: true, slug: true } },
         totpEnabled: true,
+        isSuperAdmin: true,
       },
     });
     if (!user) throw new NotFoundError("Utilisateur introuvable");

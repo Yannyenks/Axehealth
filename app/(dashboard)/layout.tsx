@@ -38,7 +38,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <AppSidebar />
       <div className="flex flex-1 flex-col">
         <Topbar />
-        <main className="flex-1 overflow-y-auto bg-muted/30 p-8">{children}</main>
+        <main className="flex-1 overflow-y-auto bg-muted/30 p-8 print:bg-white print:p-0">{children}</main>
       </div>
     </div>
   );

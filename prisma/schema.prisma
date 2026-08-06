@@ -32,6 +32,12 @@ model Organization {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Rattachement optionnel à un groupe pour un réseau de cliniques — permet
+  // un comparatif inter-établissements (voir /api/groupe/comparatif) sans
+  // donner à qui que ce soit un accès direct aux données d'un autre tenant.
+  groupId String?
+  groupe  OrganizationGroup? @relation(fields: [groupId], references: [id])
+
   users            User[]
   patients         Patient[]
   departments      Department[]
@@ -55,6 +61,7 @@ model Organization {
   creditNotes       CreditNote[]
   incidents         Incident[]
   leaveRequests     LeaveRequest[]
+  patientSatisfactions PatientSatisfaction[]
 
   @@index([slug])
 }
@@ -103,6 +110,17 @@ model User {
   totpSecret      String?
   totpEnabled     Boolean  @default(false)
   totpBackupCodes String[] @default([]) // codes de récupération, hashés Argon2id
+
+  // Verrouillage anti brute-force: compteur remis à zéro à chaque connexion
+  // réussie, incrémenté à chaque mot de passe erroné. lockedUntil bloque la
+  // connexion (même avec le bon mot de passe) jusqu'à son expiration.
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+
+  // Un compte super-admin opère au niveau plateforme (voir /api/superadmin),
+  // en plus de son rôle métier normal dans son organisation — jamais un rôle
+  // à part, pour ne pas complexifier la matrice RBAC existante.
+  isSuperAdmin Boolean @default(false)
 
   consultationsAsMedecin Consultation[]     @relation("MedecinConsultations")
   prescriptions          Prescription[]
@@ -170,7 +188,13 @@ model Patient {
 
   groupeSanguin String?
   allergies     String[] @default([])
-  antecedents   Json? // structuré: {familiaux, chirurgicaux, medicaux}
+  // Chiffré (AES-256-GCM, voir lib/encryption.ts) — stocke un JSON
+  // {familiaux, chirurgicaux, medicaux} chiffré en base, jamais en clair.
+  // Colonne String (pas Json) car le contenu déchiffrable n'est jamais
+  // interrogé directement en SQL, seulement lu/écrit via le service patient.
+  antecedents String?
+
+  satisfactions PatientSatisfaction[]
 
   insuranceProviderId String?
   insuranceProvider   InsuranceProvider? @relation(fields: [insuranceProviderId], references: [id])
@@ -262,6 +286,7 @@ model Consultation {
   prescriptions Prescription[]
   labRequests   LabRequest[]
   invoiceItems  InvoiceItem[]
+  satisfactions PatientSatisfaction[]
 
   @@index([organizationId])
   @@index([organizationId, status])
@@ -1059,4 +1084,41 @@ model LeaveRequest {
 
   @@index([organizationId])
   @@index([userId])
+}
+
+// ============================================================================
+// SATISFACTION PATIENT (module Qualité & sécurité des soins)
+// ============================================================================
+
+// Score de type NPS (0-10) — pas de diagnostic clinique, un simple retour
+// d'expérience rattaché à une consultation si disponible.
+model PatientSatisfaction {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  consultationId String?
+  consultation   Consultation? @relation(fields: [consultationId], references: [id])
+
+  score       Int // 0 à 10
+  commentaire String?
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([organizationId, createdAt])
+}
+
+// ============================================================================
+// GROUPE MULTI-ÉTABLISSEMENTS
+// ============================================================================
+
+model OrganizationGroup {
+  id            String         @id @default(cuid())
+  name          String
+  createdAt     DateTime       @default(now())
+  organizations Organization[]
 }
