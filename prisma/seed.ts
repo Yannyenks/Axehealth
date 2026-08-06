@@ -52,6 +52,38 @@ async function main() {
     await prisma.cashRegister.create({ data: { organizationId: organization.id, name: "Caisse Accueil" } });
   }
 
+  // Il n'existe pas (encore) d'écran de configuration des chambres/lits —
+  // ce jeu de démonstration permet de tester le plan des lits et
+  // l'occupation par service dès l'installation, sans accès direct à la DB.
+  const wards: { departmentCode: string; departmentName: string; rooms: { numero: string; bedCount: number }[] }[] = [
+    { departmentCode: "MED-GEN", departmentName: "Médecine générale", rooms: [{ numero: "101", bedCount: 2 }, { numero: "102", bedCount: 2 }] },
+    { departmentCode: "MATERNITE", departmentName: "Maternité", rooms: [{ numero: "201", bedCount: 3 }] },
+  ];
+
+  for (const ward of wards) {
+    const department = await prisma.department.upsert({
+      where: { organizationId_code: { organizationId: organization.id, code: ward.departmentCode } },
+      update: {},
+      create: { organizationId: organization.id, name: ward.departmentName, code: ward.departmentCode },
+    });
+
+    for (const roomDef of ward.rooms) {
+      const room = await prisma.room.upsert({
+        where: { organizationId_numero: { organizationId: organization.id, numero: roomDef.numero } },
+        update: {},
+        create: { organizationId: organization.id, departmentId: department.id, numero: roomDef.numero, type: "CHAMBRE_DOUBLE" },
+      });
+
+      for (let i = 1; i <= roomDef.bedCount; i++) {
+        await prisma.bed.upsert({
+          where: { roomId_numero: { roomId: room.id, numero: String(i) } },
+          update: {},
+          create: { organizationId: organization.id, roomId: room.id, numero: String(i) },
+        });
+      }
+    }
+  }
+
   console.log(`Seed terminé. Organisation: ${organization.slug}`);
   console.log(`Mot de passe par défaut: ${DEFAULT_PASSWORD} — PIN caisse: ${DEFAULT_PIN}`);
 }

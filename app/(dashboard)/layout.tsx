@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api-client";
 import { useAuthStore, type AuthUser } from "@/stores/auth.store";
 import { AppSidebar } from "@/components/app-sidebar";
+import { Topbar } from "@/components/topbar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -35,7 +36,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-screen">
       <AppSidebar />
-      <main className="flex-1 overflow-y-auto bg-muted/30 p-8">{children}</main>
+      <div className="flex flex-1 flex-col">
+        <Topbar />
+        <main className="flex-1 overflow-y-auto bg-muted/30 p-8">{children}</main>
+      </div>
     </div>
   );
 }
