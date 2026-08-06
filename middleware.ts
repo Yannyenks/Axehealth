@@ -7,7 +7,7 @@ import { jwtVerify } from "jose";
 // /api/webhooks/* est appelé par des services tiers (fournisseurs Mobile
 // Money) sans JWT — l'authentification y est assurée par secret partagé,
 // vérifié dans chaque route (voir lib/integrations et les handlers concernés).
-const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/auth/refresh", "/api/webhooks"];
+const PUBLIC_PATHS = ["/login", "/signup", "/api/auth/login", "/api/auth/signup", "/api/auth/refresh", "/api/webhooks"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
