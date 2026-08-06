@@ -24,14 +24,17 @@ interface StockItem {
 
 const emptyItemForm = { code: "", nom: "", categorie: "MEDICAMENT", unite: "boîte", prixAchat: "0", prixVente: "0", seuilReappro: "10" };
 const emptyLotForm = { stockItemId: "", numeroLot: "", quantite: "", datePeremption: "", site: "Dépôt principal" };
+const emptyTransferForm = { stockItemId: "", siteSource: "", siteDestination: "", quantite: "" };
 
 export default function PharmaciePage() {
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [showItemForm, setShowItemForm] = useState(false);
   const [showLotForm, setShowLotForm] = useState(false);
+  const [showTransferForm, setShowTransferForm] = useState(false);
   const [itemForm, setItemForm] = useState(emptyItemForm);
   const [lotForm, setLotForm] = useState(emptyLotForm);
+  const [transferForm, setTransferForm] = useState(emptyTransferForm);
 
   const { data, isLoading } = useQuery({
     queryKey: ["pharmacie", "stock"],
@@ -83,6 +86,23 @@ export default function PharmaciePage() {
     onError: reportError,
   });
 
+  const transferStock = useMutation({
+    mutationFn: () =>
+      api.post("/api/pharmacie/transferts", {
+        stockItemId: transferForm.stockItemId,
+        siteSource: transferForm.siteSource,
+        siteDestination: transferForm.siteDestination,
+        quantite: Number(transferForm.quantite),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pharmacie"] });
+      setTransferForm(emptyTransferForm);
+      setShowTransferForm(false);
+      setError(null);
+    },
+    onError: reportError,
+  });
+
   const alertCount = (alertsData?.peremption.length ?? 0) + (alertsData?.reappro.length ?? 0);
 
   return (
@@ -93,6 +113,7 @@ export default function PharmaciePage() {
           <p className="text-sm text-muted-foreground">Catalogue, réception de lots, sorties en FEFO</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowTransferForm((v) => !v)}>Transférer entre sites</Button>
           <Button variant="outline" onClick={() => setShowLotForm((v) => !v)}>Réceptionner un lot</Button>
           <Button onClick={() => setShowItemForm((v) => !v)}>Nouvel article</Button>
         </div>
@@ -204,6 +225,42 @@ export default function PharmaciePage() {
                 onClick={() => receiveLot.mutate()}
               >
                 Réceptionner
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {showTransferForm && (
+        <Card>
+          <CardContent className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2">
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Article</Label>
+              <Select value={transferForm.stockItemId} onChange={(e) => setTransferForm({ ...transferForm, stockItemId: e.target.value })}>
+                <option value="">Sélectionner…</option>
+                {data?.stockItems.map((item) => (
+                  <option key={item.id} value={item.id}>{item.nom}</option>
+                ))}
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Site source</Label>
+              <Input value={transferForm.siteSource} onChange={(e) => setTransferForm({ ...transferForm, siteSource: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Site destination</Label>
+              <Input value={transferForm.siteDestination} onChange={(e) => setTransferForm({ ...transferForm, siteDestination: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Quantité</Label>
+              <Input type="number" min="1" value={transferForm.quantite} onChange={(e) => setTransferForm({ ...transferForm, quantite: e.target.value })} />
+            </div>
+            <div className="flex items-end sm:col-span-2">
+              <Button
+                disabled={!transferForm.stockItemId || !transferForm.siteSource || !transferForm.siteDestination || !transferForm.quantite || transferStock.isPending}
+                onClick={() => transferStock.mutate()}
+              >
+                Transférer (FEFO)
               </Button>
             </div>
           </CardContent>

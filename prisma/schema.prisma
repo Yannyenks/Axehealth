@@ -52,6 +52,9 @@ model Organization {
   cashSessions      CashSession[]
   insuranceProviders InsuranceProvider[]
   alertRules        AlertRule[]
+  creditNotes       CreditNote[]
+  incidents         Incident[]
+  leaveRequests     LeaveRequest[]
 
   @@index([slug])
 }
@@ -114,6 +117,10 @@ model User {
   auditLogs              AuditLog[]
   stockMovements         StockMovement[]
   alertRulesCreated      AlertRule[]
+  creditNotesIssued      CreditNote[]
+  incidentsDeclared      Incident[]
+  leaveRequests          LeaveRequest[] @relation("LeaveRequester")
+  leavesApproved         LeaveRequest[] @relation("LeaveApprover")
 
   @@index([organizationId])
   @@index([organizationId, role])
@@ -419,6 +426,7 @@ model Invoice {
   items          InvoiceItem[]
   payments       Payment[]
   insuranceClaim InsuranceClaim?
+  creditNotes    CreditNote[]
 
   @@unique([organizationId, numero])
   @@index([organizationId])
@@ -752,6 +760,7 @@ model Hospitalization {
   dischargedAt DateTime?
 
   nursingNotes NursingNote[]
+  incidents    Incident[]
 
   @@index([organizationId])
   @@index([patientId])
@@ -929,4 +938,125 @@ model AlertTriggerLog {
 
   @@index([alertRuleId])
   @@index([alertRuleId, triggeredAt])
+}
+
+// ============================================================================
+// AVOIRS (module Caisse & Facturation)
+// ============================================================================
+
+enum CreditNoteReason {
+  ERREUR_FACTURATION
+  RETOUR_PRODUIT
+  GESTE_COMMERCIAL
+  AUTRE
+}
+
+// Réduit la part patient restant due sur une facture (jamais la part
+// assurance, qui suit son propre cycle de bordereau). Ne génère pas de
+// remboursement en espèces automatique — un avoir sur une facture déjà
+// soldée signale un solde en faveur du patient à régulariser manuellement.
+model CreditNote {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id])
+
+  montant Decimal          @db.Decimal(14, 2)
+  motif   CreditNoteReason
+  note    String?
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([invoiceId])
+}
+
+// ============================================================================
+// INCIDENTS QUALITÉ (module Hospitalisation)
+// ============================================================================
+
+enum IncidentType {
+  CHUTE
+  ESCARRE
+  ERREUR_MEDICAMENTEUSE
+  INFECTION_NOSOCOMIALE
+  AUTRE
+}
+
+enum IncidentSeverity {
+  MINEUR
+  MODERE
+  MAJEUR
+  CRITIQUE
+}
+
+model Incident {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  hospitalizationId String?
+  hospitalization   Hospitalization? @relation(fields: [hospitalizationId], references: [id])
+
+  type               IncidentType
+  severite           IncidentSeverity
+  description        String
+  actionsCorrectives String?
+
+  declaredById String
+  declaredBy   User   @relation(fields: [declaredById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([organizationId, type])
+}
+
+// ============================================================================
+// CONGÉS (module RH)
+// ============================================================================
+
+enum LeaveType {
+  CONGE_PAYE
+  CONGE_MALADIE
+  CONGE_MATERNITE
+  CONGE_SANS_SOLDE
+  AUTRE
+}
+
+enum LeaveStatus {
+  EN_ATTENTE
+  APPROUVE
+  REJETE
+  ANNULE
+}
+
+model LeaveRequest {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation("LeaveRequester", fields: [userId], references: [id])
+
+  type      LeaveType
+  dateDebut DateTime
+  dateFin   DateTime
+  motif     String?
+  status    LeaveStatus @default(EN_ATTENTE)
+
+  approvedById String?
+  approvedBy   User?     @relation("LeaveApprover", fields: [approvedById], references: [id])
+  approvedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([userId])
 }

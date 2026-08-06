@@ -13,10 +13,10 @@ type TxClient = Prisma.TransactionClient;
 // n'est appliquée dans ce cas (tout ou rien, dans la transaction appelante).
 async function consumeFefo(
   tx: TxClient,
-  params: { organizationId: string; stockItemId: string; quantite: number; type: StockMovementType; createdById: string; motif?: string },
+  params: { organizationId: string; stockItemId: string; quantite: number; type: StockMovementType; createdById: string; motif?: string; site?: string },
 ): Promise<void> {
   const lots = await tx.stockLot.findMany({
-    where: { stockItemId: params.stockItemId, quantite: { gt: 0 } },
+    where: { stockItemId: params.stockItemId, quantite: { gt: 0 }, site: params.site },
     orderBy: { datePeremption: "asc" },
   });
 
@@ -82,6 +82,87 @@ export async function receiveStock(params: {
     });
 
     return lot;
+  });
+}
+
+// Transfert inter-sites: consomme en FEFO au site source (jamais de
+// prélèvement partiel si le site source n'a pas assez), puis reconstitue un
+// lot identique (même numéro de lot et péremption) au site destination —
+// fusionné dans un lot existant du même numéro s'il y en a déjà un là-bas.
+export async function transferStock(params: {
+  organizationId: string;
+  stockItemId: string;
+  createdById: string;
+  siteSource: string;
+  siteDestination: string;
+  quantite: number;
+}) {
+  const { organizationId, stockItemId, createdById, siteSource, siteDestination, quantite } = params;
+
+  if (siteSource === siteDestination) throw new ConflictError("Le site source et le site destination doivent être différents");
+
+  const stockItem = await prisma.stockItem.findFirst({ where: { id: stockItemId, organizationId } });
+  if (!stockItem) throw new NotFoundError("Article introuvable");
+
+  return prisma.$transaction(async (tx) => {
+    const sourceLots = await tx.stockLot.findMany({
+      where: { stockItemId, site: siteSource, quantite: { gt: 0 } },
+      orderBy: { datePeremption: "asc" },
+    });
+
+    let remaining = quantite;
+    const transferred: { numeroLot: string; datePeremption: Date; quantite: number }[] = [];
+
+    for (const lot of sourceLots) {
+      if (remaining <= 0) break;
+      const taken = Math.min(lot.quantite, remaining);
+
+      await tx.stockLot.update({ where: { id: lot.id }, data: { quantite: lot.quantite - taken } });
+      await tx.stockMovement.create({
+        data: {
+          organizationId,
+          stockItemId,
+          stockLotId: lot.id,
+          type: "TRANSFERT",
+          quantite: -taken,
+          motif: `Transfert vers ${siteDestination}`,
+          createdById,
+        },
+      });
+
+      transferred.push({ numeroLot: lot.numeroLot, datePeremption: lot.datePeremption, quantite: taken });
+      remaining -= taken;
+    }
+
+    if (remaining > 0) {
+      throw new ConflictError(`Stock insuffisant au site "${siteSource}" pour ce transfert`);
+    }
+
+    for (const part of transferred) {
+      const existingDestLot = await tx.stockLot.findFirst({
+        where: { stockItemId, site: siteDestination, numeroLot: part.numeroLot, datePeremption: part.datePeremption },
+      });
+
+      const destLot = existingDestLot
+        ? await tx.stockLot.update({ where: { id: existingDestLot.id }, data: { quantite: existingDestLot.quantite + part.quantite } })
+        : await tx.stockLot.create({
+            data: { stockItemId, site: siteDestination, numeroLot: part.numeroLot, datePeremption: part.datePeremption, quantite: part.quantite },
+          });
+
+      await tx.stockMovement.create({
+        data: {
+          organizationId,
+          stockItemId,
+          stockLotId: destLot.id,
+          type: "TRANSFERT",
+          quantite: part.quantite,
+          motif: `Transfert depuis ${siteSource}`,
+          createdById,
+        },
+      });
+    }
+
+    return { quantiteTransferee: quantite, lots: transferred.length };
   });
 }
 

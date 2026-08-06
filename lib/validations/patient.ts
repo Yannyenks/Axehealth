@@ -14,6 +14,10 @@ export const createPatientSchema = z.object({
   insuranceProviderId: z.string().cuid().optional(),
   insuranceNumber: z.string().max(50).optional(),
   tiersPayantRate: z.number().int().min(0).max(100).optional(),
+  force: z.boolean().optional(), // ignore l'alerte de doublon et crée quand même
 });
 
+export const updatePatientSchema = createPatientSchema.omit({ force: true }).partial();
+
 export type CreatePatientInput = z.infer<typeof createPatientSchema>;
+export type UpdatePatientInput = z.infer<typeof updatePatientSchema>;

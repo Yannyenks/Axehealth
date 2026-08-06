@@ -5,6 +5,7 @@ import { requireRole, assertSameOrganization, PERMISSIONS } from "@/lib/rbac";
 import { handleApiError, NotFoundError, ConflictError } from "@/lib/api-error";
 import { writeAuditLog, ipFromRequest } from "@/lib/audit";
 import { updateConsultationSchema } from "@/lib/validations/consultation";
+import { enrichVitalSign } from "@/lib/clinical";
 
 async function loadConsultation(id: string) {
   const consultation = await prisma.consultation.findUnique({
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const consultation = await loadConsultation(params.id);
     assertSameOrganization(session, consultation.organizationId);
 
-    return NextResponse.json({ consultation });
+    return NextResponse.json({ consultation: { ...consultation, vitalSigns: consultation.vitalSigns.map(enrichVitalSign) } });
   } catch (error) {
     return handleApiError(error);
   }
@@ -76,7 +77,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       ipAddress: ipFromRequest(req),
     });
 
-    return NextResponse.json({ consultation: updated });
+    return NextResponse.json({ consultation: { ...updated, vitalSigns: updated.vitalSigns.map(enrichVitalSign) } });
   } catch (error) {
     return handleApiError(error);
   }

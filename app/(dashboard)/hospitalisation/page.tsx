@@ -8,7 +8,33 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+
+interface Incident {
+  id: string;
+  type: "CHUTE" | "ESCARRE" | "ERREUR_MEDICAMENTEUSE" | "INFECTION_NOSOCOMIALE" | "AUTRE";
+  severite: "MINEUR" | "MODERE" | "MAJEUR" | "CRITIQUE";
+  description: string;
+  createdAt: string;
+  declaredBy: { firstName: string; lastName: string };
+  hospitalization: { patient: { firstName: string; lastName: string } } | null;
+}
+
+const INCIDENT_TYPE_LABEL: Record<Incident["type"], string> = {
+  CHUTE: "Chute",
+  ESCARRE: "Escarre",
+  ERREUR_MEDICAMENTEUSE: "Erreur médicamenteuse",
+  INFECTION_NOSOCOMIALE: "Infection nosocomiale",
+  AUTRE: "Autre",
+};
+
+function severiteVariant(s: Incident["severite"]): "secondary" | "warning" | "destructive" {
+  if (s === "MINEUR") return "secondary";
+  if (s === "CRITIQUE" || s === "MAJEUR") return "destructive";
+  return "warning";
+}
 
 interface Bed {
   id: string;
@@ -48,8 +74,11 @@ export default function HospitalisationPage() {
   const [patientQuery, setPatientQuery] = useState("");
   const [admitForm, setAdmitForm] = useState({ patientId: "", bedId: "", motifEntree: "" });
   const [note, setNote] = useState({ periode: "JOUR" as "JOUR" | "NUIT", note: "" });
+  const [showIncidentForm, setShowIncidentForm] = useState(false);
+  const [incidentForm, setIncidentForm] = useState({ type: "CHUTE" as Incident["type"], severite: "MODERE" as Incident["severite"], description: "" });
 
   const { data, isLoading } = useQuery({ queryKey: ["hospitalisation", "lits"], queryFn: () => api.get<{ rooms: Room[] }>("/api/hospitalisation/lits") });
+  const { data: incidentsData } = useQuery({ queryKey: ["hospitalisation", "incidents"], queryFn: () => api.get<{ incidents: Incident[] }>("/api/hospitalisation/incidents") });
   const { data: patientsData } = useQuery({
     queryKey: ["patients", "search", patientQuery],
     queryFn: () => api.get<{ patients: Patient[] }>(`/api/patients?q=${encodeURIComponent(patientQuery)}`),
@@ -87,6 +116,17 @@ export default function HospitalisationPage() {
     mutationFn: (hospitalizationId: string) => api.post(`/api/hospitalisation/admissions/${hospitalizationId}/soins`, note),
     onSuccess: () => {
       setNote({ periode: "JOUR", note: "" });
+      setError(null);
+    },
+    onError: reportError,
+  });
+
+  const declareIncident = useMutation({
+    mutationFn: (hospitalizationId?: string) => api.post("/api/hospitalisation/incidents", { ...incidentForm, hospitalizationId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["hospitalisation", "incidents"] });
+      setIncidentForm({ type: "CHUTE", severite: "MODERE", description: "" });
+      setShowIncidentForm(false);
       setError(null);
     },
     onError: reportError,
@@ -204,10 +244,82 @@ export default function HospitalisationPage() {
               <Button variant="secondary" disabled={dischargePatient.isPending} onClick={() => dischargePatient.mutate(selectedBed.hospitalizationId!)}>
                 Sortie du patient
               </Button>
+              <Button variant="outline" onClick={() => setShowIncidentForm((v) => !v)}>
+                {showIncidentForm ? "Annuler" : "Déclarer un incident"}
+              </Button>
             </div>
+
+            {showIncidentForm && (
+              <div className="grid grid-cols-1 gap-3 rounded-md border p-4 sm:grid-cols-3">
+                <Select value={incidentForm.type} onChange={(e) => setIncidentForm({ ...incidentForm, type: e.target.value as Incident["type"] })}>
+                  {Object.entries(INCIDENT_TYPE_LABEL).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </Select>
+                <Select value={incidentForm.severite} onChange={(e) => setIncidentForm({ ...incidentForm, severite: e.target.value as Incident["severite"] })}>
+                  <option value="MINEUR">Mineur</option>
+                  <option value="MODERE">Modéré</option>
+                  <option value="MAJEUR">Majeur</option>
+                  <option value="CRITIQUE">Critique</option>
+                </Select>
+                <Button
+                  disabled={!incidentForm.description || declareIncident.isPending}
+                  onClick={() => declareIncident.mutate(selectedBed.hospitalizationId!)}
+                >
+                  Déclarer
+                </Button>
+                <Input
+                  placeholder="Description de l'incident…"
+                  className="sm:col-span-3"
+                  value={incidentForm.description}
+                  onChange={(e) => setIncidentForm({ ...incidentForm, description: e.target.value })}
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Incidents qualité récents</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Type</TableHead>
+                <TableHead>Sévérité</TableHead>
+                <TableHead>Patient</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Déclaré par</TableHead>
+                <TableHead>Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {incidentsData?.incidents.map((incident) => (
+                <TableRow key={incident.id}>
+                  <TableCell>{INCIDENT_TYPE_LABEL[incident.type]}</TableCell>
+                  <TableCell>
+                    <Badge variant={severiteVariant(incident.severite)}>{incident.severite}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    {incident.hospitalization ? `${incident.hospitalization.patient.firstName} ${incident.hospitalization.patient.lastName}` : "—"}
+                  </TableCell>
+                  <TableCell className="max-w-xs truncate text-sm text-muted-foreground">{incident.description}</TableCell>
+                  <TableCell>{incident.declaredBy.firstName} {incident.declaredBy.lastName}</TableCell>
+                  <TableCell className="whitespace-nowrap text-sm text-muted-foreground">{new Date(incident.createdAt).toLocaleDateString("fr-FR")}</TableCell>
+                </TableRow>
+              ))}
+              {incidentsData?.incidents.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">Aucun incident déclaré</TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

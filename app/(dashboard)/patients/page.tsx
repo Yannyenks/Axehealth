@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api-client";
+import { api, ApiError } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 
 interface Patient {
@@ -18,6 +19,7 @@ interface Patient {
   sexe: "M" | "F";
   dateNaissance: string;
   phone: string | null;
+  allergies?: string[];
   insuranceProvider?: { name: string } | null;
 }
 
@@ -26,12 +28,22 @@ interface Provider {
   name: string;
 }
 
+interface DuplicateMatch {
+  id: string;
+  patientNumber: string;
+  firstName: string;
+  lastName: string;
+}
+
 const emptyForm = { firstName: "", lastName: "", sexe: "F" as "M" | "F", dateNaissance: "", phone: "", insuranceProviderId: "", insuranceNumber: "" };
 
 export default function PatientsPage() {
   const [q, setQ] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [duplicates, setDuplicates] = useState<DuplicateMatch[] | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editPhone, setEditPhone] = useState("");
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -45,16 +57,31 @@ export default function PatientsPage() {
   });
 
   const createPatient = useMutation({
-    mutationFn: () =>
+    mutationFn: (force?: boolean) =>
       api.post("/api/patients", {
         ...form,
         insuranceProviderId: form.insuranceProviderId || undefined,
         insuranceNumber: form.insuranceNumber || undefined,
+        force,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["patients"] });
       setForm(emptyForm);
       setShowForm(false);
+      setDuplicates(null);
+    },
+    onError: (e) => {
+      if (e instanceof ApiError && e.status === 409) {
+        setDuplicates((e.body as { duplicates: DuplicateMatch[] }).duplicates);
+      }
+    },
+  });
+
+  const updatePhone = useMutation({
+    mutationFn: (id: string) => api.patch(`/api/patients/${id}`, { phone: editPhone }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["patients"] });
+      setEditingId(null);
     },
   });
 
@@ -65,7 +92,7 @@ export default function PatientsPage() {
           <h1 className="font-display text-2xl font-bold">Patients</h1>
           <p className="text-sm text-muted-foreground">Dossier patient informatisé</p>
         </div>
-        <Button onClick={() => setShowForm((v) => !v)}>{showForm ? "Annuler" : "Nouveau patient"}</Button>
+        <Button onClick={() => { setShowForm((v) => !v); setDuplicates(null); }}>{showForm ? "Annuler" : "Nouveau patient"}</Button>
       </div>
 
       {showForm && (
@@ -109,10 +136,27 @@ export default function PatientsPage() {
                 <Input id="insuranceNumber" value={form.insuranceNumber} onChange={(e) => setForm({ ...form, insuranceNumber: e.target.value })} />
               </div>
             )}
+
+            {duplicates && duplicates.length > 0 && (
+              <div className="space-y-2 rounded-md border border-warning bg-warning/10 p-3 sm:col-span-2">
+                <p className="text-sm font-medium text-foreground">
+                  Patient(s) similaire(s) déjà enregistré(s) — vérifiez avant de continuer :
+                </p>
+                <ul className="text-sm text-muted-foreground">
+                  {duplicates.map((d) => (
+                    <li key={d.id}>{d.patientNumber} — {d.firstName} {d.lastName}</li>
+                  ))}
+                </ul>
+                <Button size="sm" variant="secondary" onClick={() => createPatient.mutate(true)}>
+                  Créer quand même un nouveau dossier
+                </Button>
+              </div>
+            )}
+
             <div className="flex items-end sm:col-span-2">
               <Button
                 disabled={!form.firstName || !form.lastName || !form.dateNaissance || createPatient.isPending}
-                onClick={() => createPatient.mutate()}
+                onClick={() => createPatient.mutate(undefined)}
               >
                 {createPatient.isPending ? "Création…" : "Créer le patient"}
               </Button>
@@ -134,12 +178,13 @@ export default function PatientsPage() {
                 <TableHead>Date de naissance</TableHead>
                 <TableHead>Téléphone</TableHead>
                 <TableHead>Assurance</TableHead>
+                <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">Chargement…</TableCell>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">Chargement…</TableCell>
                 </TableRow>
               )}
               {data?.patients.map((p) => (
@@ -148,13 +193,31 @@ export default function PatientsPage() {
                   <TableCell>{p.firstName} {p.lastName}</TableCell>
                   <TableCell>{p.sexe}</TableCell>
                   <TableCell>{new Date(p.dateNaissance).toLocaleDateString("fr-FR")}</TableCell>
-                  <TableCell>{p.phone ?? "—"}</TableCell>
-                  <TableCell>{p.insuranceProvider?.name ?? "—"}</TableCell>
+                  <TableCell>
+                    {editingId === p.id ? (
+                      <div className="flex gap-1">
+                        <Input className="h-8 w-32" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
+                        <Button size="sm" disabled={updatePhone.isPending} onClick={() => updatePhone.mutate(p.id)}>OK</Button>
+                      </div>
+                    ) : (
+                      p.phone ?? "—"
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {p.insuranceProvider?.name ? <Badge variant="secondary">{p.insuranceProvider.name}</Badge> : "—"}
+                  </TableCell>
+                  <TableCell>
+                    {editingId !== p.id && (
+                      <Button size="sm" variant="outline" onClick={() => { setEditingId(p.id); setEditPhone(p.phone ?? ""); }}>
+                        Modifier le téléphone
+                      </Button>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
               {data?.patients.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">Aucun patient trouvé</TableCell>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">Aucun patient trouvé</TableCell>
                 </TableRow>
               )}
             </TableBody>

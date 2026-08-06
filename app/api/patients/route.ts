@@ -5,6 +5,7 @@ import { requireRole, PERMISSIONS } from "@/lib/rbac";
 import { handleApiError } from "@/lib/api-error";
 import { writeAuditLog, ipFromRequest } from "@/lib/audit";
 import { createPatientSchema } from "@/lib/validations/patient";
+import { findPotentialDuplicates, createPatient } from "@/services/patient.service";
 
 export async function GET(req: NextRequest) {
   try {
@@ -45,11 +46,15 @@ export async function POST(req: NextRequest) {
     requireRole(session, PERMISSIONS.patients.write);
 
     const input = createPatientSchema.parse(await req.json());
-    const patientNumber = `PAT-${Date.now()}`;
 
-    const patient = await prisma.patient.create({
-      data: { organizationId: session.organizationId, patientNumber, ...input },
-    });
+    if (!input.force) {
+      const duplicates = await findPotentialDuplicates(session.organizationId, input);
+      if (duplicates.length > 0) {
+        return NextResponse.json({ error: "POTENTIAL_DUPLICATE", duplicates }, { status: 409 });
+      }
+    }
+
+    const patient = await createPatient(session.organizationId, input);
 
     await writeAuditLog({
       organizationId: session.organizationId,

@@ -1,9 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api-client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api, ApiError } from "@/lib/api-client";
+import { useAuthStore } from "@/stores/auth.store";
 import { Select } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
@@ -28,6 +32,8 @@ const STATUS_LABEL: Record<string, string> = {
   ANNULEE: "Annulée",
 };
 
+const CAN_ISSUE_CREDIT_NOTE = ["ADMIN", "COMPTABLE"];
+
 function statusVariant(status: string): "success" | "warning" | "secondary" | "destructive" {
   if (status === "PAYEE") return "success";
   if (status === "EN_ATTENTE_PAIEMENT" || status === "PARTIELLEMENT_PAYEE") return "warning";
@@ -36,11 +42,36 @@ function statusVariant(status: string): "success" | "warning" | "secondary" | "d
 }
 
 export default function FacturesPage() {
+  const { user } = useAuthStore();
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [creditNoteInvoiceId, setCreditNoteInvoiceId] = useState<string | null>(null);
+  const [creditNoteForm, setCreditNoteForm] = useState({ montant: "", motif: "GESTE_COMMERCIAL", note: "" });
+
   const { data, isLoading } = useQuery({
     queryKey: ["factures", status],
     queryFn: () => api.get<{ invoices: Invoice[] }>(`/api/factures${status ? `?status=${status}` : ""}`),
   });
+
+  const issueCreditNote = useMutation({
+    mutationFn: () =>
+      api.post("/api/caisse/avoirs", {
+        invoiceId: creditNoteInvoiceId,
+        montant: Number(creditNoteForm.montant),
+        motif: creditNoteForm.motif,
+        note: creditNoteForm.note || undefined,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["factures"] });
+      setCreditNoteInvoiceId(null);
+      setCreditNoteForm({ montant: "", motif: "GESTE_COMMERCIAL", note: "" });
+      setError(null);
+    },
+    onError: (e) => setError(e instanceof ApiError ? e.message : "Une erreur est survenue"),
+  });
+
+  const canIssueCreditNote = user && CAN_ISSUE_CREDIT_NOTE.includes(user.role);
 
   return (
     <div className="space-y-6">
@@ -58,6 +89,42 @@ export default function FacturesPage() {
         </Select>
       </div>
 
+      {error && (
+        <Card className="border-destructive">
+          <CardContent className="p-4 text-sm text-destructive">{error}</CardContent>
+        </Card>
+      )}
+
+      {creditNoteInvoiceId && (
+        <Card>
+          <CardContent className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-4">
+            <div className="space-y-1.5">
+              <Label>Montant de l'avoir (FCFA)</Label>
+              <Input type="number" min="0" value={creditNoteForm.montant} onChange={(e) => setCreditNoteForm({ ...creditNoteForm, montant: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Motif</Label>
+              <Select value={creditNoteForm.motif} onChange={(e) => setCreditNoteForm({ ...creditNoteForm, motif: e.target.value })}>
+                <option value="ERREUR_FACTURATION">Erreur de facturation</option>
+                <option value="RETOUR_PRODUIT">Retour produit</option>
+                <option value="GESTE_COMMERCIAL">Geste commercial</option>
+                <option value="AUTRE">Autre</option>
+              </Select>
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Note</Label>
+              <Input value={creditNoteForm.note} onChange={(e) => setCreditNoteForm({ ...creditNoteForm, note: e.target.value })} />
+            </div>
+            <div className="flex gap-2 sm:col-span-4">
+              <Button disabled={!creditNoteForm.montant || issueCreditNote.isPending} onClick={() => issueCreditNote.mutate()}>
+                Émettre l'avoir
+              </Button>
+              <Button variant="outline" onClick={() => setCreditNoteInvoiceId(null)}>Annuler</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardContent className="p-0">
           <Table>
@@ -70,12 +137,13 @@ export default function FacturesPage() {
                 <TableHead>Payé</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead>Date</TableHead>
+                {canIssueCreditNote && <TableHead />}
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">Chargement…</TableCell>
+                  <TableCell colSpan={8} className="text-center text-muted-foreground">Chargement…</TableCell>
                 </TableRow>
               )}
               {data?.invoices.map((invoice) => (
@@ -93,11 +161,20 @@ export default function FacturesPage() {
                   <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                     {new Date(invoice.createdAt).toLocaleDateString("fr-FR")}
                   </TableCell>
+                  {canIssueCreditNote && (
+                    <TableCell>
+                      {invoice.status !== "ANNULEE" && (
+                        <Button size="sm" variant="outline" onClick={() => setCreditNoteInvoiceId(invoice.id)}>
+                          Avoir
+                        </Button>
+                      )}
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
               {data?.invoices.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">Aucune facture</TableCell>
+                  <TableCell colSpan={8} className="text-center text-muted-foreground">Aucune facture</TableCell>
                 </TableRow>
               )}
             </TableBody>

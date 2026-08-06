@@ -40,10 +40,29 @@ interface ConsultationDetail {
   diagnosticCim: string | null;
   patient: { firstName: string; lastName: string; patientNumber: string; allergies: string[] };
   medecin: { firstName: string; lastName: string };
-  vitalSigns: { temperature: number | null; tensionSys: number | null; tensionDia: number | null; pouls: number | null }[];
+  vitalSigns: {
+    temperature: number | null;
+    tensionSys: number | null;
+    tensionDia: number | null;
+    pouls: number | null;
+    poids: number | null;
+    taille: number | null;
+    imc: number | null;
+    imcClassification: string | null;
+    tensionClassification: string | null;
+  }[];
   prescriptions: Prescription[];
   labRequests: LabRequest[];
 }
+
+const IMC_LABEL: Record<string, string> = { MAIGREUR: "Maigreur", NORMAL: "IMC normal", SURPOIDS: "Surpoids", OBESITE: "Obésité" };
+const TENSION_LABEL: Record<string, string> = {
+  NORMALE: "Tension normale",
+  ELEVEE: "Tension élevée",
+  HYPERTENSION_STADE_1: "HTA stade 1",
+  HYPERTENSION_STADE_2: "HTA stade 2",
+  CRISE_HYPERTENSIVE: "Crise hypertensive",
+};
 
 const LAB_STATUS_LABEL: Record<string, string> = {
   DEMANDE: "Demandé",
@@ -61,7 +80,7 @@ export default function ConsultationDetailPage({ params }: { params: { id: strin
 
   const [diagnostic, setDiagnostic] = useState("");
   const [diagnosticCim, setDiagnosticCim] = useState("");
-  const [vitals, setVitals] = useState({ temperature: "", tensionSys: "", tensionDia: "", pouls: "" });
+  const [vitals, setVitals] = useState({ temperature: "", tensionSys: "", tensionDia: "", pouls: "", poids: "", taille: "" });
   const [rx, setRx] = useState({ denomination: "", posologie: "", quantite: "1" });
   const [exam, setExam] = useState({ type: "LABORATOIRE" as "LABORATOIRE" | "IMAGERIE", libelle: "" });
 
@@ -95,6 +114,7 @@ export default function ConsultationDetailPage({ params }: { params: { id: strin
 
   const { consultation } = data;
   const locked = consultation.status === "EN_ATTENTE_CAISSE";
+  const lastVitalSign = consultation.vitalSigns.at(-1);
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -137,6 +157,30 @@ export default function ConsultationDetailPage({ params }: { params: { id: strin
             <Label>Pouls</Label>
             <Input disabled={locked} type="number" value={vitals.pouls} onChange={(e) => setVitals({ ...vitals, pouls: e.target.value })} />
           </div>
+          <div className="space-y-1.5">
+            <Label>Poids (kg)</Label>
+            <Input disabled={locked} type="number" step="0.1" value={vitals.poids} onChange={(e) => setVitals({ ...vitals, poids: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Taille (cm)</Label>
+            <Input disabled={locked} type="number" value={vitals.taille} onChange={(e) => setVitals({ ...vitals, taille: e.target.value })} />
+          </div>
+
+          {lastVitalSign && (lastVitalSign.imc || lastVitalSign.tensionClassification) && (
+            <div className="col-span-2 flex flex-wrap gap-2 sm:col-span-4">
+              {lastVitalSign.imc && (
+                <Badge variant={lastVitalSign.imcClassification === "NORMAL" ? "success" : "warning"}>
+                  IMC {lastVitalSign.imc} — {IMC_LABEL[lastVitalSign.imcClassification!]}
+                </Badge>
+              )}
+              {lastVitalSign.tensionClassification && (
+                <Badge variant={lastVitalSign.tensionClassification === "NORMALE" ? "success" : "warning"}>
+                  {TENSION_LABEL[lastVitalSign.tensionClassification]}
+                </Badge>
+              )}
+            </div>
+          )}
+
           <div className="col-span-2 sm:col-span-4">
             <Button
               disabled={locked || updateConsultation.isPending}
@@ -147,6 +191,8 @@ export default function ConsultationDetailPage({ params }: { params: { id: strin
                     tensionSys: vitals.tensionSys ? Number(vitals.tensionSys) : undefined,
                     tensionDia: vitals.tensionDia ? Number(vitals.tensionDia) : undefined,
                     pouls: vitals.pouls ? Number(vitals.pouls) : undefined,
+                    poids: vitals.poids ? Number(vitals.poids) : undefined,
+                    taille: vitals.taille ? Number(vitals.taille) : undefined,
                   },
                 })
               }

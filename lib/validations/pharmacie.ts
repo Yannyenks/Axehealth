@@ -33,7 +33,17 @@ export const dispensePrescriptionItemSchema = z.object({
   prescriptionItemId: z.string().cuid(),
 });
 
+export const transferStockSchema = z
+  .object({
+    stockItemId: z.string().cuid(),
+    siteSource: z.string().min(1).max(100),
+    siteDestination: z.string().min(1).max(100),
+    quantite: z.number().int().positive(),
+  })
+  .refine((data) => data.siteSource !== data.siteDestination, { message: "Le site source et destination doivent être différents" });
+
 export type CreateStockItemInput = z.infer<typeof createStockItemSchema>;
 export type ReceiveStockInput = z.infer<typeof receiveStockSchema>;
 export type SellCounterInput = z.infer<typeof sellCounterSchema>;
 export type DispensePrescriptionItemInput = z.infer<typeof dispensePrescriptionItemSchema>;
+export type TransferStockInput = z.infer<typeof transferStockSchema>;

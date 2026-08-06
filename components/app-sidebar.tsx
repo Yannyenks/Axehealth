@@ -71,7 +71,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Administration",
     items: [
-      { href: "/rh", label: "RH & gardes", icon: UserCog, roles: PERMISSIONS.rh.read },
+      { href: "/rh", label: "RH & congés", icon: UserCog, roles: PERMISSIONS.conges.demander },
       { href: "/audit", label: "Journal d'audit", icon: ScrollText, roles: ["ADMIN"] },
       { href: "/parametres", label: "Paramètres", icon: Settings, roles: ["ADMIN"] },
     ],
