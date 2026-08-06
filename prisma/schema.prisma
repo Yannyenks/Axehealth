@@ -1,0 +1,859 @@
+// ============================================================================
+// AxeHealth v1.0 Enterprise Edition — Schéma Prisma
+// ERP multi-tenant pour cliniques et centres de santé en Afrique
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// MULTI-TENANT
+// ============================================================================
+
+// Une Organization = une clinique / un centre de santé (isolation par tenant).
+// Toutes les entités métier portent un organizationId indexé pour garantir
+// l'étanchéité des données entre établissements sur un schéma partagé.
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  address   String?
+  city      String?
+  country   String   @default("CM")
+  phone     String?
+  email     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users            User[]
+  patients         Patient[]
+  departments      Department[]
+  consultations    Consultation[]
+  appointments     Appointment[]
+  invoices         Invoice[]
+  payments         Payment[]
+  insuranceClaims  InsuranceClaim[]
+  stockItems       StockItem[]
+  stockMovements   StockMovement[]
+  rooms            Room[]
+  beds             Bed[]
+  hospitalizations Hospitalization[]
+  shifts           Shift[]
+  payrolls         Payroll[]
+  auditLogs        AuditLog[]
+  cashRegisters     CashRegister[]
+  cashSessions      CashSession[]
+  insuranceProviders InsuranceProvider[]
+
+  @@index([slug])
+}
+
+// ============================================================================
+// AUTHENTIFICATION & RBAC
+// ============================================================================
+
+enum Role {
+  ADMIN
+  SECRETAIRE
+  MEDECIN
+  INFIRMIER
+  PHARMACIEN
+  BIOLOGISTE
+  CAISSIER
+  COMPTABLE
+  RH
+}
+
+model User {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  email        String  @unique
+  passwordHash String // Argon2id
+  pinHash      String? // PIN caisse (clôture, empreinte numérique de session)
+  firstName    String
+  lastName     String
+  phone        String?
+  role         Role
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  isActive      Boolean   @default(true)
+  lastLoginAt   DateTime?
+  refreshToken  String? // dernier refresh token émis (rotation)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  consultationsAsMedecin Consultation[]     @relation("MedecinConsultations")
+  prescriptions          Prescription[]
+  appointments           Appointment[]      @relation("AppointmentPractitioner")
+  invoicesCreated        Invoice[]          @relation("InvoiceCreatedBy")
+  paymentsReceived       Payment[]          @relation("PaymentCashier")
+  paymentsValidated      Payment[]          @relation("PaymentValidator")
+  cashSessions           CashSession[]
+  nursingNotes           NursingNote[]
+  shifts                 Shift[]
+  payroll                Payroll[]
+  auditLogs              AuditLog[]
+  stockMovements         StockMovement[]
+
+  @@index([organizationId])
+  @@index([organizationId, role])
+}
+
+model Department {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name String // Consultation, Labo, Pharmacie, Hospitalisation, ...
+  code String
+
+  users         User[]
+  rooms         Room[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+}
+
+// ============================================================================
+// DOSSIER PATIENT INFORMATISÉ (DPI)
+// ============================================================================
+
+enum Sexe {
+  M
+  F
+}
+
+model Patient {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  patientNumber String // ID national / matricule interne
+  qrCode        String  @unique @default(cuid())
+  firstName     String
+  lastName      String
+  sexe          Sexe
+  dateNaissance DateTime
+  phone         String?
+  email         String?
+  adresse       String?
+  ville         String?
+
+  groupeSanguin String?
+  allergies     String[] @default([])
+  antecedents   Json? // structuré: {familiaux, chirurgicaux, medicaux}
+
+  insuranceProviderId String?
+  insuranceProvider   InsuranceProvider? @relation(fields: [insuranceProviderId], references: [id])
+  insuranceNumber     String?
+  tiersPayantRate     Int? // % pris en charge par l'assurance (ex: 80)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  consultations    Consultation[]
+  vitalSigns       VitalSign[]
+  appointments     Appointment[]
+  invoices         Invoice[]
+  hospitalizations Hospitalization[]
+  prescriptions    Prescription[]
+
+  @@unique([organizationId, patientNumber])
+  @@index([organizationId])
+  @@index([organizationId, lastName, firstName])
+}
+
+model VitalSign {
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  consultationId String?
+  consultation   Consultation? @relation(fields: [consultationId], references: [id])
+
+  temperature   Float? // °C
+  tensionSys    Int? // mmHg
+  tensionDia    Int? // mmHg
+  pouls         Int? // bpm
+  frequenceResp Int? // /min
+  poids         Float? // kg
+  taille        Float? // cm
+  saturationO2  Int? // %
+  glycemie      Float? // g/L
+
+  recordedAt DateTime @default(now())
+
+  @@index([patientId])
+}
+
+// ============================================================================
+// CONSULTATIONS
+// ============================================================================
+
+enum ConsultationStatus {
+  PLANIFIEE
+  EN_ATTENTE_CAISSE // acte payant verrouillé tant que la caisse n'a pas débloqué
+  EN_COURS
+  TERMINEE
+  ANNULEE
+}
+
+model Consultation {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  medecinId String
+  medecin   User   @relation("MedecinConsultations", fields: [medecinId], references: [id])
+
+  appointmentId String?      @unique
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+
+  status ConsultationStatus @default(PLANIFIEE)
+
+  // Débloqué uniquement par un paiement caisse validé (double validation anti-fraude)
+  unlockedByPaymentId String?
+  unlockedAt          DateTime?
+
+  motif        String?
+  diagnostic   String? // libellé
+  diagnosticCim String? // code CIM-10 / ICD-11
+  examenClinique String?
+  notes        String?
+
+  startedAt  DateTime?
+  endedAt    DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  vitalSigns    VitalSign[]
+  prescriptions Prescription[]
+  labRequests   LabRequest[]
+  invoiceItems  InvoiceItem[]
+
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([patientId])
+  @@index([medecinId])
+}
+
+// ============================================================================
+// PRESCRIPTIONS (ordonnance électronique)
+// ============================================================================
+
+model Prescription {
+  id             String  @id @default(cuid())
+  consultationId String
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  prescripteurId String
+  prescripteur   User   @relation(fields: [prescripteurId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  items PrescriptionItem[]
+
+  @@index([consultationId])
+  @@index([patientId])
+}
+
+model PrescriptionItem {
+  id             String       @id @default(cuid())
+  prescriptionId String
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+
+  stockItemId String?
+  stockItem   StockItem? @relation(fields: [stockItemId], references: [id])
+
+  denomination String // nom du médicament si hors stock catalogué
+  posologie    String
+  duree        String? // ex: "7 jours"
+  quantite     Int
+  // Alerte d'interaction médicamenteuse calculée côté service au moment de la
+  // création (vs. autres items actifs du patient) et journalisée ici.
+  interactionAlert String?
+
+  dispensedAt DateTime?
+  dispensedById String?
+
+  @@index([prescriptionId])
+}
+
+// ============================================================================
+// EXAMENS (Labo / Imagerie)
+// ============================================================================
+
+enum LabRequestType {
+  LABORATOIRE
+  IMAGERIE
+}
+
+enum LabRequestStatus {
+  DEMANDE
+  EN_COURS
+  RESULTAT_DISPONIBLE
+  ANNULE
+}
+
+model LabRequest {
+  id             String       @id @default(cuid())
+  consultationId String
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+
+  type       LabRequestType
+  libelle    String
+  status     LabRequestStatus @default(DEMANDE)
+  resultat   String?
+  resultatFileUrl String?
+
+  createdAt  DateTime @default(now())
+  completedAt DateTime?
+
+  @@index([consultationId])
+}
+
+// ============================================================================
+// RENDEZ-VOUS
+// ============================================================================
+
+enum AppointmentStatus {
+  CONFIRME
+  EN_ATTENTE
+  ANNULE
+  HONORE
+  ABSENT
+}
+
+model Appointment {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  practitionerId String
+  practitioner   User   @relation("AppointmentPractitioner", fields: [practitionerId], references: [id])
+
+  scheduledAt DateTime
+  duration    Int      @default(30) // minutes
+  status      AppointmentStatus @default(CONFIRME)
+  motif       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  consultation Consultation?
+
+  @@index([organizationId])
+  @@index([organizationId, scheduledAt])
+  @@index([practitionerId, scheduledAt])
+}
+
+// ============================================================================
+// CAISSE, FACTURATION & TIERS-PAYANT (OHADA)
+// ============================================================================
+
+enum InvoiceStatus {
+  BROUILLON
+  EN_ATTENTE_PAIEMENT
+  PARTIELLEMENT_PAYEE
+  PAYEE
+  ANNULEE
+}
+
+model Invoice {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  numero String // numéro de facture séquentiel par organisation
+
+  status InvoiceStatus @default(BROUILLON)
+
+  montantTotal      Decimal @db.Decimal(14, 2)
+  montantPartPatient Decimal @db.Decimal(14, 2)
+  montantPartAssurance Decimal @default(0) @db.Decimal(14, 2)
+  montantPaye       Decimal @default(0) @db.Decimal(14, 2)
+
+  insuranceProviderId String?
+  insuranceProvider   InsuranceProvider? @relation(fields: [insuranceProviderId], references: [id])
+
+  createdById String
+  createdBy   User   @relation("InvoiceCreatedBy", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items          InvoiceItem[]
+  payments       Payment[]
+  insuranceClaim InsuranceClaim?
+
+  @@unique([organizationId, numero])
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([patientId])
+}
+
+model InvoiceItem {
+  id        String  @id @default(cuid())
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  consultationId String?
+  consultation   Consultation? @relation(fields: [consultationId], references: [id])
+
+  pole        String // Consultation, Labo, Pharmacie, Hospitalisation
+  libelle     String
+  quantite    Int     @default(1)
+  prixUnitaire Decimal @db.Decimal(14, 2)
+  montant     Decimal @db.Decimal(14, 2)
+
+  @@index([invoiceId])
+}
+
+enum PaymentMode {
+  ESPECES
+  MTN_MOMO
+  ORANGE_MONEY
+  WAVE
+  CARTE
+  VIREMENT
+}
+
+// Anti-fraude: chaque paiement passe par un CAISSIER qui l'enregistre, puis
+// nécessite la validation d'un second utilisateur habilité (ou le même
+// caissier ré-authentifié par PIN) avant que l'acte ne soit débloqué côté
+// médecin. Voir CashRegister.unlock via consultation.unlockedByPaymentId.
+model Payment {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id])
+
+  cashSessionId String
+  cashSession   CashSession @relation(fields: [cashSessionId], references: [id])
+
+  mode    PaymentMode
+  montant Decimal     @db.Decimal(14, 2)
+  reference String? // référence transaction Mobile Money / carte
+
+  cashierId String
+  cashier   User   @relation("PaymentCashier", fields: [cashierId], references: [id])
+
+  // Double validation aveugle : rempli uniquement après confirmation PIN
+  validatedById String?
+  validatedBy   User?     @relation("PaymentValidator", fields: [validatedById], references: [id])
+  validatedAt   DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([invoiceId])
+  @@index([cashSessionId])
+}
+
+model InsuranceProvider {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name          String
+  tauxPriseEnCharge Int // % par défaut (ex: 80)
+  plafondAnnuel Decimal? @db.Decimal(14, 2)
+  contact       String?
+
+  patients Patient[]
+  invoices Invoice[]
+  claims   InsuranceClaim[]
+
+  @@index([organizationId])
+}
+
+enum ClaimStatus {
+  EN_PREPARATION
+  TRANSMIS
+  ACCEPTE
+  REJETE
+  PAYE
+}
+
+// Bordereau de transmission à l'assurance
+model InsuranceClaim {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  invoiceId String  @unique
+  invoice   Invoice @relation(fields: [invoiceId], references: [id])
+
+  insuranceProviderId String
+  insuranceProvider   InsuranceProvider @relation(fields: [insuranceProviderId], references: [id])
+
+  montant Decimal     @db.Decimal(14, 2)
+  status  ClaimStatus @default(EN_PREPARATION)
+
+  numeroBordereau String?
+  transmisAt      DateTime?
+  reponduAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([organizationId, status])
+}
+
+// Caisse physique (ex: "Caisse Accueil", "Caisse Pharmacie")
+model CashRegister {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name     String
+  isActive Boolean @default(true)
+
+  sessions CashSession[]
+
+  @@index([organizationId])
+}
+
+enum CashSessionStatus {
+  OUVERTE
+  CLOTUREE
+}
+
+// Session de caisse: ouverture -> mouvements -> clôture avec vérification
+// PIN et journal immuable (AuditLog) pour tracer tout écart de caisse.
+model CashSession {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  cashRegisterId String
+  cashRegister   CashRegister @relation(fields: [cashRegisterId], references: [id])
+
+  cashierId String
+  cashier   User   @relation(fields: [cashierId], references: [id])
+
+  status CashSessionStatus @default(OUVERTE)
+
+  montantOuverture Decimal  @db.Decimal(14, 2)
+  montantClotureTheorique Decimal? @db.Decimal(14, 2) // calculé
+  montantClotureReel     Decimal? @db.Decimal(14, 2) // saisi par le caissier
+  ecart                  Decimal? @db.Decimal(14, 2)
+
+  pinVerifiedAt DateTime? // horodatage de la vérification PIN à la clôture
+
+  openedAt  DateTime  @default(now())
+  closedAt  DateTime?
+
+  payments Payment[]
+
+  @@index([organizationId])
+  @@index([cashierId])
+}
+
+// ============================================================================
+// PHARMACIE, DÉPÔTS ET STOCKS MULTI-SITES
+// ============================================================================
+
+enum StockItemCategory {
+  MEDICAMENT
+  CONSOMMABLE
+  DISPOSITIF_MEDICAL
+}
+
+model StockItem {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  code       String
+  nom        String
+  categorie  StockItemCategory
+  unite      String // boîte, flacon, comprimé...
+  prixAchat  Decimal @db.Decimal(14, 2)
+  prixVente  Decimal @db.Decimal(14, 2)
+  seuilReappro Int   @default(10)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lots               StockLot[]
+  movements          StockMovement[]
+  prescriptionItems  PrescriptionItem[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+}
+
+// Numéro de lot avec date de péremption — support du FEFO
+model StockLot {
+  id          String    @id @default(cuid())
+  stockItemId String
+  stockItem   StockItem @relation(fields: [stockItemId], references: [id], onDelete: Cascade)
+
+  numeroLot     String
+  quantite      Int
+  datePeremption DateTime
+  site          String // dépôt / site multi-sites
+
+  createdAt DateTime @default(now())
+
+  movements StockMovement[]
+
+  @@index([stockItemId])
+  @@index([stockItemId, datePeremption]) // requête FEFO: tri par péremption croissante
+}
+
+enum StockMovementType {
+  ENTREE
+  SORTIE_VENTE
+  SORTIE_DISPENSATION
+  AJUSTEMENT
+  PEREMPTION
+  TRANSFERT
+}
+
+model StockMovement {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  stockItemId String
+  stockItem   StockItem @relation(fields: [stockItemId], references: [id])
+
+  stockLotId String?
+  stockLot   StockLot? @relation(fields: [stockLotId], references: [id])
+
+  type      StockMovementType
+  quantite  Int // positif = entrée, négatif = sortie
+  motif     String?
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([stockItemId])
+}
+
+// ============================================================================
+// HOSPITALISATION, BLOC & SOINS INFIRMIERS
+// ============================================================================
+
+enum RoomType {
+  CHAMBRE_SIMPLE
+  CHAMBRE_DOUBLE
+  BLOC_OPERATOIRE
+  URGENCES
+  SOINS_INTENSIFS
+}
+
+model Room {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  numero String
+  type   RoomType
+
+  beds Bed[]
+
+  @@unique([organizationId, numero])
+  @@index([organizationId])
+}
+
+enum BedStatus {
+  LIBRE
+  OCCUPE
+  RESERVE
+  MAINTENANCE
+}
+
+model Bed {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  numero String
+  status BedStatus @default(LIBRE)
+
+  hospitalizations Hospitalization[]
+
+  @@unique([roomId, numero])
+  @@index([organizationId])
+  @@index([organizationId, status])
+}
+
+enum HospitalizationStatus {
+  EN_COURS
+  SORTIE
+  TRANSFERE
+}
+
+model Hospitalization {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  bedId String
+  bed   Bed    @relation(fields: [bedId], references: [id])
+
+  status      HospitalizationStatus @default(EN_COURS)
+  motifEntree String?
+  motifSortie String?
+
+  admittedAt   DateTime  @default(now())
+  dischargedAt DateTime?
+
+  nursingNotes NursingNote[]
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([bedId])
+}
+
+enum ShiftPeriod {
+  JOUR
+  NUIT
+}
+
+// Cahier de soins infirmiers — transmission d'équipe jour/nuit
+model NursingNote {
+  id                String          @id @default(cuid())
+  hospitalizationId String
+  hospitalization   Hospitalization @relation(fields: [hospitalizationId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  periode ShiftPeriod
+  note    String
+
+  createdAt DateTime @default(now())
+
+  @@index([hospitalizationId])
+}
+
+// ============================================================================
+// RH, GARDES ET PAIE
+// ============================================================================
+
+model Shift {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  startAt DateTime
+  endAt   DateTime
+  periode ShiftPeriod
+  isAstreinte Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([userId, startAt])
+}
+
+enum PayrollType {
+  SALAIRE_FIXE
+  RETROCESSION // % sur actes pour médecins vacataires
+}
+
+enum PayrollStatus {
+  BROUILLON
+  VALIDE
+  PAYE
+}
+
+model Payroll {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  periode String // "2026-08"
+  type    PayrollType
+
+  salaireBrut      Decimal  @default(0) @db.Decimal(14, 2)
+  cotisationsCnps  Decimal  @default(0) @db.Decimal(14, 2)
+  retrocessionTaux Int? // % sur actes, si RETROCESSION
+  retrocessionMontant Decimal @default(0) @db.Decimal(14, 2)
+  netAPayer        Decimal  @db.Decimal(14, 2)
+
+  status PayrollStatus @default(BROUILLON)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, userId, periode, type])
+  @@index([organizationId])
+}
+
+// ============================================================================
+// AUDIT (immuable)
+// ============================================================================
+
+// Journal d'audit immuable — aucune mise à jour ni suppression prévue côté
+// application; utilisé pour la traçabilité anti-fraude (caisse, dispensation,
+// accès DPI) et les exigences réglementaires (RMA/SNIS).
+model AuditLog {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId String?
+  user   User?  @relation(fields: [userId], references: [id])
+
+  action     String // ex: "PAYMENT_VALIDATED", "CASH_SESSION_CLOSED", "PATIENT_RECORD_VIEWED"
+  entityType String
+  entityId   String
+  metadata   Json?
+  ipAddress  String?
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([organizationId, entityType, entityId])
+  @@index([organizationId, action])
+}
