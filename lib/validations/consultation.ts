@@ -1,12 +1,18 @@
 import { z } from "zod";
 
-export const createConsultationSchema = z.object({
-  patientId: z.string().cuid(),
-  medecinId: z.string().cuid(),
-  appointmentId: z.string().cuid().optional(),
-  motif: z.string().min(1).max(500).optional(),
-  isPayant: z.boolean().default(true), // false = pas de verrou caisse (ex: contrôle gratuit)
-});
+export const createConsultationSchema = z
+  .object({
+    patientId: z.string().cuid(),
+    medecinId: z.string().cuid(),
+    appointmentId: z.string().cuid().optional(),
+    motif: z.string().min(1).max(500).optional(),
+    isPayant: z.boolean().default(true), // false = pas de verrou caisse (ex: contrôle gratuit)
+    montant: z.number().positive().optional(), // tarif de l'acte, requis si isPayant
+  })
+  .refine((data) => !data.isPayant || data.montant !== undefined, {
+    message: "Le montant de l'acte est requis pour une consultation payante",
+    path: ["montant"],
+  });
 
 export const updateConsultationSchema = z.object({
   status: z.enum(["PLANIFIEE", "EN_ATTENTE_CAISSE", "EN_COURS", "TERMINEE", "ANNULEE"]).optional(),

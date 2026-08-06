@@ -5,6 +5,7 @@ import { requireRole, PERMISSIONS } from "@/lib/rbac";
 import { handleApiError } from "@/lib/api-error";
 import { writeAuditLog, ipFromRequest } from "@/lib/audit";
 import { createConsultationSchema } from "@/lib/validations/consultation";
+import { createConsultationWithInvoice } from "@/services/consultation.service";
 
 export async function GET(req: NextRequest) {
   try {
@@ -45,26 +46,7 @@ export async function POST(req: NextRequest) {
 
     const input = createConsultationSchema.parse(await req.json());
 
-    const patient = await prisma.patient.findFirst({
-      where: { id: input.patientId, organizationId: session.organizationId },
-    });
-    if (!patient) {
-      return NextResponse.json({ error: "PATIENT_NOT_FOUND" }, { status: 404 });
-    }
-
-    // Un acte payant démarre verrouillé: seule la caisse (paiement validé)
-    // peut le faire passer en EN_COURS via /api/caisse/paiements/[id]/valider.
-    const consultation = await prisma.consultation.create({
-      data: {
-        organizationId: session.organizationId,
-        patientId: input.patientId,
-        medecinId: input.medecinId,
-        appointmentId: input.appointmentId,
-        motif: input.motif,
-        status: input.isPayant ? "EN_ATTENTE_CAISSE" : "EN_COURS",
-        startedAt: input.isPayant ? undefined : new Date(),
-      },
-    });
+    const consultation = await createConsultationWithInvoice(session.organizationId, session.sub, input);
 
     await writeAuditLog({
       organizationId: session.organizationId,

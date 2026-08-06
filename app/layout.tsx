@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { OfflineProvider } from "./offline-provider";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "AxeHealth — ERP Santé",
@@ -11,8 +12,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr">
       <body>
-        <OfflineProvider />
-        {children}
+        <Providers>
+          <OfflineProvider />
+          {children}
+        </Providers>
       </body>
     </html>
   );

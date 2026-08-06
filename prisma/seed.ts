@@ -47,11 +47,10 @@ async function main() {
     });
   }
 
-  await prisma.cashRegister.upsert({
-    where: { id: "seed-caisse-accueil" },
-    update: {},
-    create: { id: "seed-caisse-accueil", organizationId: organization.id, name: "Caisse Accueil" },
-  });
+  const existingRegister = await prisma.cashRegister.findFirst({ where: { organizationId: organization.id, name: "Caisse Accueil" } });
+  if (!existingRegister) {
+    await prisma.cashRegister.create({ data: { organizationId: organization.id, name: "Caisse Accueil" } });
+  }
 
   console.log(`Seed terminé. Organisation: ${organization.slug}`);
   console.log(`Mot de passe par défaut: ${DEFAULT_PASSWORD} — PIN caisse: ${DEFAULT_PIN}`);

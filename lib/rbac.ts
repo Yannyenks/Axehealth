@@ -3,6 +3,10 @@ import type { AccessTokenPayload } from "./auth";
 
 // Permissions par module. Un rôle absent d'une liste n'a pas accès au module.
 export const PERMISSIONS = {
+  patients: {
+    read: ["ADMIN", "SECRETAIRE", "MEDECIN", "INFIRMIER", "CAISSIER", "PHARMACIEN"] as Role[],
+    write: ["ADMIN", "SECRETAIRE"] as Role[],
+  },
   consultations: {
     read: ["ADMIN", "MEDECIN", "INFIRMIER", "SECRETAIRE"] as Role[],
     write: ["ADMIN", "MEDECIN"] as Role[],
@@ -12,6 +16,9 @@ export const PERMISSIONS = {
     encaisser: ["ADMIN", "CAISSIER"] as Role[],
     valider: ["ADMIN", "CAISSIER"] as Role[], // second regard (double validation aveugle)
     cloturer: ["ADMIN", "CAISSIER"] as Role[],
+  },
+  factures: {
+    read: ["ADMIN", "CAISSIER", "COMPTABLE", "SECRETAIRE"] as Role[],
   },
   pharmacie: {
     read: ["ADMIN", "PHARMACIEN", "MEDECIN"] as Role[],

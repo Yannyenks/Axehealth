@@ -24,6 +24,25 @@ async function unlockConsultationsIfInvoicePaid(tx: Prisma.TransactionClient, in
   });
 }
 
+export async function openCashSession(params: { organizationId: string; cashierId: string; cashRegisterId: string; montantOuverture: number }) {
+  const cashRegister = await prisma.cashRegister.findFirst({ where: { id: params.cashRegisterId, organizationId: params.organizationId } });
+  if (!cashRegister) throw new NotFoundError("Caisse introuvable");
+
+  const alreadyOpen = await prisma.cashSession.findFirst({
+    where: { cashRegisterId: params.cashRegisterId, status: "OUVERTE" },
+  });
+  if (alreadyOpen) throw new ConflictError("Cette caisse a déjà une session ouverte");
+
+  return prisma.cashSession.create({
+    data: {
+      organizationId: params.organizationId,
+      cashRegisterId: params.cashRegisterId,
+      cashierId: params.cashierId,
+      montantOuverture: params.montantOuverture,
+    },
+  });
+}
+
 export async function registerPayment(params: {
   organizationId: string;
   cashierId: string;

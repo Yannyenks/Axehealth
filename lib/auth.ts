@@ -53,8 +53,16 @@ export function verifyRefreshToken(token: string): { sub: string } {
 
 export function getBearerToken(req: Request): string | null {
   const header = req.headers.get("authorization");
-  if (!header?.startsWith("Bearer ")) return null;
-  return header.slice("Bearer ".length);
+  if (header?.startsWith("Bearer ")) return header.slice("Bearer ".length);
+
+  // Le navigateur ne pose pas de header Authorization: le login place le
+  // token dans un cookie httpOnly (voir app/api/auth/login), donc c'est la
+  // voie principale pour les requêtes issues de l'UI. Le header Bearer
+  // reste utile pour un usage API-to-API direct (Postman, intégrations).
+  const cookieHeader = req.headers.get("cookie");
+  if (!cookieHeader) return null;
+  const match = cookieHeader.match(/(?:^|;\s*)axehealth_token=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
 }
 
 export class UnauthorizedError extends Error {}

@@ -1,0 +1,192 @@
+"use client";
+
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api-client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+
+interface PrescriptionItem {
+  id: string;
+  denomination: string;
+  posologie: string;
+  quantite: number;
+  interactionAlert: string | null;
+  dispensedAt: string | null;
+}
+
+interface Prescription {
+  id: string;
+  items: PrescriptionItem[];
+}
+
+interface ConsultationDetail {
+  id: string;
+  status: string;
+  motif: string | null;
+  diagnostic: string | null;
+  diagnosticCim: string | null;
+  patient: { firstName: string; lastName: string; patientNumber: string; allergies: string[] };
+  medecin: { firstName: string; lastName: string };
+  vitalSigns: { temperature: number | null; tensionSys: number | null; tensionDia: number | null; pouls: number | null }[];
+  prescriptions: Prescription[];
+}
+
+export default function ConsultationDetailPage({ params }: { params: { id: string } }) {
+  const queryClient = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["consultations", params.id],
+    queryFn: () => api.get<{ consultation: ConsultationDetail }>(`/api/consultations/${params.id}`),
+  });
+
+  const [diagnostic, setDiagnostic] = useState("");
+  const [diagnosticCim, setDiagnosticCim] = useState("");
+  const [vitals, setVitals] = useState({ temperature: "", tensionSys: "", tensionDia: "", pouls: "" });
+  const [rx, setRx] = useState({ denomination: "", posologie: "", quantite: "1" });
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["consultations", params.id] });
+
+  const updateConsultation = useMutation({
+    mutationFn: (body: Record<string, unknown>) => api.patch(`/api/consultations/${params.id}`, body),
+    onSuccess: invalidate,
+  });
+
+  const addPrescription = useMutation({
+    mutationFn: () =>
+      api.post(`/api/consultations/${params.id}/prescriptions`, {
+        items: [{ denomination: rx.denomination, posologie: rx.posologie, quantite: Number(rx.quantite) }],
+      }),
+    onSuccess: () => {
+      invalidate();
+      setRx({ denomination: "", posologie: "", quantite: "1" });
+    },
+  });
+
+  if (isLoading || !data) return <p className="text-muted-foreground">Chargement…</p>;
+
+  const { consultation } = data;
+  const locked = consultation.status === "EN_ATTENTE_CAISSE";
+
+  return (
+    <div className="max-w-3xl space-y-6">
+      <div>
+        <h1 className="font-display text-2xl font-bold">
+          {consultation.patient.firstName} {consultation.patient.lastName}
+        </h1>
+        <p className="text-sm text-muted-foreground">{consultation.patient.patientNumber} · Dr {consultation.medecin.lastName}</p>
+      </div>
+
+      {locked && (
+        <Card className="border-warning">
+          <CardContent className="flex items-center justify-between p-4">
+            <p className="text-sm text-foreground">
+              <Badge variant="warning" className="mr-2">Verrouillée</Badge>
+              Cet acte est payant et attend la validation caisse (double contrôle) avant de pouvoir être démarré.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Constantes vitales</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="space-y-1.5">
+            <Label>Température (°C)</Label>
+            <Input disabled={locked} type="number" step="0.1" value={vitals.temperature} onChange={(e) => setVitals({ ...vitals, temperature: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Tension sys.</Label>
+            <Input disabled={locked} type="number" value={vitals.tensionSys} onChange={(e) => setVitals({ ...vitals, tensionSys: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Tension dia.</Label>
+            <Input disabled={locked} type="number" value={vitals.tensionDia} onChange={(e) => setVitals({ ...vitals, tensionDia: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Pouls</Label>
+            <Input disabled={locked} type="number" value={vitals.pouls} onChange={(e) => setVitals({ ...vitals, pouls: e.target.value })} />
+          </div>
+          <div className="col-span-2 sm:col-span-4">
+            <Button
+              disabled={locked || updateConsultation.isPending}
+              onClick={() =>
+                updateConsultation.mutate({
+                  vitalSigns: {
+                    temperature: vitals.temperature ? Number(vitals.temperature) : undefined,
+                    tensionSys: vitals.tensionSys ? Number(vitals.tensionSys) : undefined,
+                    tensionDia: vitals.tensionDia ? Number(vitals.tensionDia) : undefined,
+                    pouls: vitals.pouls ? Number(vitals.pouls) : undefined,
+                  },
+                })
+              }
+            >
+              Enregistrer les constantes
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Diagnostic</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-1.5">
+            <Label>Diagnostic</Label>
+            <Input disabled={locked} value={diagnostic || consultation.diagnostic || ""} onChange={(e) => setDiagnostic(e.target.value)} />
+          </div>
+          <div className="space-y-1.5 max-w-xs">
+            <Label>Code CIM-10</Label>
+            <Input disabled={locked} value={diagnosticCim || consultation.diagnosticCim || ""} onChange={(e) => setDiagnosticCim(e.target.value)} />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              disabled={locked || updateConsultation.isPending}
+              onClick={() => updateConsultation.mutate({ diagnostic, diagnosticCim })}
+            >
+              Enregistrer le diagnostic
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={locked || consultation.status === "TERMINEE" || updateConsultation.isPending}
+              onClick={() => updateConsultation.mutate({ status: "TERMINEE" })}
+            >
+              Clôturer la consultation
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Ordonnance</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {consultation.prescriptions.flatMap((p) => p.items).map((item) => (
+            <div key={item.id} className="rounded-md border p-3 text-sm">
+              <p className="font-medium">{item.denomination} — {item.posologie} (x{item.quantite})</p>
+              {item.interactionAlert && <p className="mt-1 text-warning">⚠ {item.interactionAlert}</p>}
+              <p className="mt-1 text-xs text-muted-foreground">{item.dispensedAt ? "Dispensé" : "Non dispensé"}</p>
+            </div>
+          ))}
+
+          {!locked && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+              <Input placeholder="Médicament" value={rx.denomination} onChange={(e) => setRx({ ...rx, denomination: e.target.value })} />
+              <Input placeholder="Posologie" value={rx.posologie} onChange={(e) => setRx({ ...rx, posologie: e.target.value })} />
+              <Input type="number" min="1" placeholder="Qté" value={rx.quantite} onChange={(e) => setRx({ ...rx, quantite: e.target.value })} />
+              <Button disabled={!rx.denomination || !rx.posologie || addPrescription.isPending} onClick={() => addPrescription.mutate()}>
+                Ajouter
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
