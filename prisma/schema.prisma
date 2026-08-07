@@ -32,6 +32,20 @@ model Organization {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Personnalisation par établissement (logo/couleur affichés dans la sidebar
+  // et injectés en variable CSS — voir app/(dashboard)/layout.tsx).
+  logoUrl      String?
+  primaryColor String?
+
+  // Scaffold commercial SaaS: pas de facturation réelle branchée pour
+  // l'instant (voir README), juste la sélection/affichage d'une offre.
+  plan        OrgPlan   @default(STARTER)
+  trialEndsAt DateTime?
+
+  // Posé à la fin de l'assistant d'onboarding (/onboarding) — tant que null,
+  // l'ADMIN de l'organisation est redirigé vers l'assistant à la connexion.
+  onboardingCompletedAt DateTime?
+
   // Rattachement optionnel à un groupe pour un réseau de cliniques — permet
   // un comparatif inter-établissements (voir /api/groupe/comparatif) sans
   // donner à qui que ce soit un accès direct aux données d'un autre tenant.
@@ -82,6 +96,14 @@ enum Role {
   RH
 }
 
+// Offre commerciale de l'établissement — voir lib/plans.ts pour les libellés
+// et limites indicatives. Pas d'intégration de paiement réelle pour l'instant.
+enum OrgPlan {
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
 model User {
   id             String       @id @default(cuid())
   organizationId String
@@ -121,6 +143,14 @@ model User {
   // en plus de son rôle métier normal dans son organisation — jamais un rôle
   // à part, pour ne pas complexifier la matrice RBAC existante.
   isSuperAdmin Boolean @default(false)
+
+  // Compte technique créé à la demande pour le mode assistance super-admin
+  // (voir services/superadmin.service.ts::getOrCreateSupportUser) — un User
+  // réel de l'organisation ciblée (pour que toute la logique RBAC/écritures
+  // existante continue de fonctionner sans modification), mais qui ne peut
+  // jamais se connecter normalement et n'apparaît jamais dans l'équipe vue
+  // par le client (services/team.service.ts).
+  isSupportAccount Boolean @default(false)
 
   consultationsAsMedecin Consultation[]     @relation("MedecinConsultations")
   prescriptions          Prescription[]

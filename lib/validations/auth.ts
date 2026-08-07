@@ -8,6 +8,7 @@ export const signupSchema = z.object({
   lastName: z.string().min(1).max(100),
   email: z.string().email(),
   password: z.string().min(8).max(100),
+  plan: z.enum(["STARTER", "PRO", "ENTERPRISE"]).default("STARTER"),
 });
 
 export type SignupInput = z.infer<typeof signupSchema>;

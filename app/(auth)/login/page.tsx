@@ -3,9 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 
 export default function LoginPage() {
   const router = useRouter();
+  const t = useTranslations("Auth.login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -29,9 +32,9 @@ export default function LoginPage() {
     if (!res.ok) {
       if (res.status === 423) {
         const body = await res.json().catch(() => null);
-        setError(body?.message ?? "Compte temporairement verrouillé");
+        setError(body?.message ?? t("locked"));
       } else {
-        setError("Identifiants invalides");
+        setError(t("invalidCredentials"));
       }
       return;
     }
@@ -42,7 +45,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/");
+    router.push("/dashboard");
   }
 
   async function handleMfaSubmit(e: React.FormEvent) {
@@ -59,11 +62,11 @@ export default function LoginPage() {
     setLoading(false);
 
     if (!res.ok) {
-      setError("Code invalide ou expiré");
+      setError(t("mfaInvalid"));
       return;
     }
 
-    router.push("/");
+    router.push("/dashboard");
   }
 
   if (challengeToken) {
@@ -71,12 +74,12 @@ export default function LoginPage() {
       <main className="flex min-h-screen items-center justify-center bg-muted px-4">
         <form onSubmit={handleMfaSubmit} className="w-full max-w-sm space-y-4 rounded-lg border bg-card p-8 shadow-sm">
           <div className="space-y-1 text-center">
-            <h1 className="font-display text-2xl font-bold text-primary">Vérification en deux étapes</h1>
-            <p className="text-sm text-muted-foreground">Saisissez le code de votre application d'authentification</p>
+            <h1 className="font-display text-2xl font-bold text-primary">{t("mfaTitle")}</h1>
+            <p className="text-sm text-muted-foreground">{t("mfaSubtitle")}</p>
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="mfaCode" className="text-sm font-medium">Code à 6 chiffres (ou code de secours)</label>
+            <label htmlFor="mfaCode" className="text-sm font-medium">{t("mfaCode")}</label>
             <input
               id="mfaCode"
               required
@@ -90,11 +93,11 @@ export default function LoginPage() {
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <button type="submit" disabled={loading} className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50">
-            {loading ? "Vérification…" : "Valider"}
+            {t("mfaSubmit")}
           </button>
 
           <button type="button" onClick={() => setChallengeToken(null)} className="w-full text-center text-sm text-muted-foreground hover:underline">
-            Retour
+            {t("mfaBack")}
           </button>
         </form>
       </main>
@@ -104,15 +107,18 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-muted px-4">
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 rounded-lg border bg-card p-8 shadow-sm">
-        <div className="space-y-1 text-center">
-          <h1 className="font-display text-2xl font-bold text-primary">AxeHealth</h1>
-          <p className="text-sm text-muted-foreground">Connexion à votre espace clinique</p>
+        <div className="flex items-center justify-between">
+          <Link href="/" className="font-display text-xl font-bold text-primary">AxeHealth</Link>
+          <LocaleSwitcher />
+        </div>
+
+        <div className="space-y-1">
+          <h1 className="font-display text-2xl font-bold">{t("title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="email" className="text-sm font-medium">
-            Email
-          </label>
+          <label htmlFor="email" className="text-sm font-medium">{t("email")}</label>
           <input
             id="email"
             type="email"
@@ -124,9 +130,7 @@ export default function LoginPage() {
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="password" className="text-sm font-medium">
-            Mot de passe
-          </label>
+          <label htmlFor="password" className="text-sm font-medium">{t("password")}</label>
           <input
             id="password"
             type="password"
@@ -144,11 +148,11 @@ export default function LoginPage() {
           disabled={loading}
           className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
         >
-          {loading ? "Connexion…" : "Se connecter"}
+          {loading ? t("submitting") : t("submit")}
         </button>
 
         <p className="text-center text-sm text-muted-foreground">
-          Nouvelle clinique ? <Link href="/signup" className="font-medium text-primary hover:underline">Créer un espace</Link>
+          {t("noAccount")} <Link href="/signup" className="font-medium text-primary hover:underline">{t("createSpace")}</Link>
         </p>
       </form>
     </main>

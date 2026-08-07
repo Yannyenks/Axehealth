@@ -17,6 +17,9 @@ dist-ssr
 out
 next-env.d.ts
 
+# TypeScript
+*.tsbuildinfo
+
 # Prisma
 prisma/dev.db
 

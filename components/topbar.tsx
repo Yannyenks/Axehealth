@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search } from "lucide-react";
+import Link from "next/link";
+import { Search, ShieldCheck } from "lucide-react";
 import { useAuthStore } from "@/stores/auth.store";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -35,6 +36,15 @@ export function Topbar() {
       </form>
 
       <div className="flex items-center gap-3">
+        {user.isSuperAdmin && (
+          <Link
+            href="/super-admin"
+            className="flex items-center gap-1.5 rounded-md border border-warning/30 bg-warning/10 px-3 py-1.5 text-xs font-semibold text-warning hover:bg-warning/20"
+          >
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Console plateforme
+          </Link>
+        )}
         <ThemeToggle />
         <div className="text-right">
           <p className="text-sm font-medium leading-tight text-foreground">{user.firstName} {user.lastName}</p>

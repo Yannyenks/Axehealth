@@ -21,7 +21,11 @@ export async function POST(req: NextRequest) {
     // Réponse identique que l'utilisateur existe ou non, ou que ce soit le
     // compte ou son organisation qui soit désactivé — évite l'énumération
     // de comptes ET ne révèle pas qu'une organisation a été suspendue.
-    if (!user || !user.isActive || !user.organization.isActive) {
+    // Un compte support (voir services/superadmin.service.ts) n'a jamais de
+    // mot de passe utilisable et ne doit jamais pouvoir se connecter par ce
+    // chemin, quel que soit l'input — seul le flux d'assistance super-admin
+    // peut en émettre une session.
+    if (!user || !user.isActive || !user.organization.isActive || user.isSupportAccount) {
       return NextResponse.json({ error: "INVALID_CREDENTIALS" }, { status: 401 });
     }
 

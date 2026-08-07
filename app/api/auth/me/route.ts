@@ -16,14 +16,20 @@ export async function GET(req: NextRequest) {
         lastName: true,
         role: true,
         organizationId: true,
-        organization: { select: { name: true, slug: true } },
+        organization: {
+          select: { name: true, slug: true, logoUrl: true, primaryColor: true, plan: true, trialEndsAt: true, onboardingCompletedAt: true },
+        },
         totpEnabled: true,
         isSuperAdmin: true,
       },
     });
     if (!user) throw new NotFoundError("Utilisateur introuvable");
 
-    return NextResponse.json({ user });
+    // Dérivé du claim JWT décodé (session), jamais de la base — l'état
+    // d'assistance est une propriété du token en cours, pas de l'utilisateur.
+    const impersonation = session.impersonatedBy ? { active: true as const } : { active: false as const };
+
+    return NextResponse.json({ user, impersonation });
   } catch (error) {
     return handleApiError(error);
   }

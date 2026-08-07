@@ -1,0 +1,127 @@
+{
+  "Common": {
+    "brand": "AxeHealth",
+    "loading": "Loading…"
+  },
+  "Landing": {
+    "nav": {
+      "features": "Features",
+      "pricing": "Pricing",
+      "login": "Log in",
+      "cta": "Create my clinic"
+    },
+    "hero": {
+      "eyebrow": "SaaS platform for clinics and health centers",
+      "title": "Run your healthcare facility. Simply. With confidence.",
+      "subtitle": "AxeHealth brings patient records, fraud-proof cash handling, pharmacy, inpatient care, HR and billing together in one space, tailored to your facility.",
+      "ctaPrimary": "Create my facility",
+      "ctaSecondary": "Log in",
+      "ctaHint": "No credit card required to get started"
+    },
+    "features": {
+      "title": "Everything your clinic needs, in one place",
+      "subtitle": "Every team member only sees the modules relevant to them.",
+      "items": {
+        "patients": { "title": "Patient records (EHR)", "description": "Medical history, allergies and encounters, centralized and encrypted." },
+        "caisse": { "title": "Fraud-proof cash register", "description": "Mandatory dual validation on every payment collected." },
+        "pharmacie": { "title": "Pharmacy & stock", "description": "FEFO batch management, expiry and shortage alerts." },
+        "hospitalisation": { "title": "Real-time inpatient care", "description": "Bed map, admissions, transfers and nursing notes." },
+        "rh": { "title": "HR & scheduling", "description": "Shifts, leave requests and payroll for care staff." },
+        "audit": { "title": "Immutable audit log", "description": "Full traceability of every sensitive action." },
+        "offline": { "title": "Offline mode", "description": "Data entry keeps working even during network outages." },
+        "multiEtablissement": { "title": "Multi-facility & roles", "description": "An isolated, tailored space for every facility." }
+      }
+    },
+    "pricing": {
+      "title": "A plan for every stage of your growth",
+      "subtitle": "Change plans anytime from your settings.",
+      "cta": "Start with {plan}"
+    },
+    "footer": {
+      "tagline": "Integrated management ERP for clinics and health centers.",
+      "rights": "All rights reserved."
+    }
+  },
+  "Plans": {
+    "STARTER": { "name": "Starter", "tagline": "To get started with a small team", "highlights": ["Up to 5 accounts", "All clinical modules", "Email support"] },
+    "PRO": { "name": "Pro", "tagline": "For a growing clinic", "highlights": ["Up to 20 accounts", "Cross-clinic comparison", "Priority support"] },
+    "ENTERPRISE": { "name": "Enterprise", "tagline": "For a network of facilities", "highlights": ["Unlimited accounts", "Clinic network (group)", "Dedicated support"] },
+    "maxUsers": "{count} accounts",
+    "maxUsersUnlimited": "Unlimited accounts"
+  },
+  "Auth": {
+    "login": {
+      "title": "Log in to your space",
+      "subtitle": "Access your facility's dashboard",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Log in",
+      "submitting": "Logging in…",
+      "noAccount": "New clinic?",
+      "createSpace": "Create a space",
+      "invalidCredentials": "Invalid credentials",
+      "locked": "Account temporarily locked",
+      "mfaTitle": "Two-factor verification",
+      "mfaSubtitle": "Enter the code from your authenticator app",
+      "mfaCode": "6-digit code (or backup code)",
+      "mfaSubmit": "Verify",
+      "mfaBack": "Back",
+      "mfaInvalid": "Invalid or expired code"
+    },
+    "signup": {
+      "title": "Create your facility's space",
+      "subtitle": "Your facility will be ready in a few minutes",
+      "organizationName": "Clinic / health center name",
+      "city": "City",
+      "country": "Country",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "email": "Work email",
+      "password": "Password",
+      "passwordHint": "8 characters minimum. You'll be the administrator of this space.",
+      "planLabel": "Choose your plan",
+      "submit": "Create my space",
+      "submitting": "Creating…",
+      "haveAccount": "Already have an account?",
+      "login": "Log in",
+      "genericError": "Unable to create the account"
+    }
+  },
+  "Onboarding": {
+    "stepIndicator": "Step {current}/{total}",
+    "skip": "Skip this step",
+    "continue": "Continue",
+    "back": "Back",
+    "branding": {
+      "title": "Customize your space",
+      "subtitle": "Give your dashboard your facility's identity.",
+      "logoLabel": "Facility logo (optional)",
+      "logoHint": "PNG, JPEG, WEBP or SVG, 2 MB maximum",
+      "logoUploading": "Uploading logo…",
+      "colorLabel": "Brand color",
+      "address": "Address",
+      "city": "City",
+      "country": "Country",
+      "phone": "Phone",
+      "email": "Contact email"
+    },
+    "team": {
+      "title": "Build your team",
+      "subtitle": "Invite your colleagues and assign them a role — you can always add more later from Settings.",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "email": "Email",
+      "role": "Role",
+      "addButton": "Add this member",
+      "addedTitle": "Members added",
+      "credentialsNotice": "Temporary password for {email}: {password} (share it once)"
+    },
+    "welcome": {
+      "title": "Welcome, {name}",
+      "subtitle": "Your space is ready. Here's a summary of your facility.",
+      "planLabel": "Plan",
+      "membersLabel": "Team members",
+      "cta": "Go to my dashboard"
+    }
+  }
+}

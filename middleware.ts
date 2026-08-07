@@ -21,6 +21,13 @@ const PUBLIC_PATHS = [
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // Cas particulier: "/" est la landing page publique. Un `startsWith("/")`
+  // dans la boucle ci-dessous matcherait *tous* les chemins (ils commencent
+  // tous par "/"), donc on le traite en comparaison stricte, à part.
+  if (pathname === "/") {
+    return NextResponse.next();
+  }
+
   if (PUBLIC_PATHS.some((path) => pathname.startsWith(path))) {
     return NextResponse.next();
   }

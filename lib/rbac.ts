@@ -71,6 +71,16 @@ export const PERMISSIONS = {
   groupe: {
     read: ["ADMIN"] as Role[], // comparatif inter-cliniques réservé à la direction
   },
+  equipe: {
+    read: ["ADMIN"] as Role[],
+    manage: ["ADMIN"] as Role[], // inviter, changer de rôle, désactiver un compte
+  },
+  organisation: {
+    manage: ["ADMIN"] as Role[],
+  },
+  locaux: {
+    manage: ["ADMIN"] as Role[], // configuration des services/chambres/lits
+  },
 } as const;
 
 export class ForbiddenError extends Error {}

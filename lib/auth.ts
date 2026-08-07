@@ -18,6 +18,11 @@ export interface AccessTokenPayload {
   organizationId: string;
   role: Role;
   isSuperAdmin?: boolean;
+  // Présent uniquement sur un token de session d'assistance (voir
+  // services/superadmin.service.ts::startAssistanceSession) — porte l'id du
+  // vrai super-admin, jamais isSuperAdmin lui-même (une session d'assistance
+  // ne doit pas pouvoir en déclencher une autre ni lister les organisations).
+  impersonatedBy?: string;
 }
 
 export async function hashPassword(plain: string): Promise<string> {

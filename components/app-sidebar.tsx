@@ -18,7 +18,6 @@ import {
   ShieldCheck,
   FlaskConical,
   LogOut,
-  Building2,
   Network,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,7 +30,6 @@ interface NavItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   roles: readonly Role[];
-  superAdminOnly?: boolean;
 }
 
 interface NavGroup {
@@ -46,7 +44,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Pilotage",
     items: [
-      { href: "/", label: "Tableau de bord", icon: LayoutDashboard, roles: PERMISSIONS.dashboards.read },
+      { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard, roles: PERMISSIONS.dashboards.read },
       { href: "/alertes", label: "Alertes", icon: BellRing, roles: PERMISSIONS.alertes.manage },
     ],
   },
@@ -80,10 +78,6 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/groupe", label: "Comparatif inter-cliniques", icon: Network, roles: PERMISSIONS.groupe.read },
     ],
   },
-  {
-    label: "Plateforme",
-    items: [{ href: "/super-admin", label: "Organisations (super-admin)", icon: Building2, roles: [], superAdminOnly: true }],
-  },
 ];
 
 export function AppSidebar() {
@@ -94,7 +88,7 @@ export function AppSidebar() {
 
   const groups = NAV_GROUPS.map((group) => ({
     ...group,
-    items: group.items.filter((item) => (item.superAdminOnly ? user.isSuperAdmin : item.roles.includes(user.role))),
+    items: group.items.filter((item) => item.roles.includes(user.role)),
   })).filter((group) => group.items.length > 0);
 
   async function handleLogout() {
@@ -103,13 +97,22 @@ export function AppSidebar() {
     window.location.href = "/login";
   }
 
+  const org = user.organization;
+
   return (
     <aside className="flex h-screen w-64 flex-col overflow-y-auto bg-sidebar text-sidebar-foreground print:hidden">
       <div className="flex items-center gap-2 px-5 py-6">
-        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">A</div>
-        <div>
-          <p className="font-display text-base font-bold leading-tight text-white">AxeHealth</p>
-          <p className="text-[11px] leading-tight text-sidebar-muted">ERP Santé — Édition Entreprise</p>
+        {org?.logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={org.logoUrl} alt="" className="h-8 w-8 rounded-md object-cover" />
+        ) : (
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
+            {(org?.name ?? "A")[0]}
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="truncate font-display text-base font-bold leading-tight text-white">{org?.name ?? "AxeHealth"}</p>
+          <p className="text-[11px] leading-tight text-sidebar-muted">Propulsé par AxeHealth</p>
         </div>
       </div>
 

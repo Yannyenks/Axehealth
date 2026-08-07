@@ -1,0 +1,127 @@
+{
+  "Common": {
+    "brand": "AxeHealth",
+    "loading": "Chargement…"
+  },
+  "Landing": {
+    "nav": {
+      "features": "Fonctionnalités",
+      "pricing": "Tarifs",
+      "login": "Connexion",
+      "cta": "Créer mon établissement"
+    },
+    "hero": {
+      "eyebrow": "Plateforme SaaS pour cliniques et centres de santé",
+      "title": "Gérez votre établissement de santé. Simplement. En toute confiance.",
+      "subtitle": "AxeHealth réunit dossiers patients, caisse anti-fraude, pharmacie, hospitalisation, RH et facturation dans un seul espace, personnalisé pour votre établissement.",
+      "ctaPrimary": "Créer mon établissement",
+      "ctaSecondary": "Se connecter",
+      "ctaHint": "Aucune carte bancaire requise pour démarrer"
+    },
+    "features": {
+      "title": "Tout ce dont votre clinique a besoin, dans un seul espace",
+      "subtitle": "Chaque membre de votre équipe accède uniquement aux modules qui le concernent.",
+      "items": {
+        "patients": { "title": "Dossiers patients (DPI)", "description": "Antécédents, allergies et historique centralisés et chiffrés." },
+        "caisse": { "title": "Caisse anti-fraude", "description": "Double validation obligatoire sur chaque paiement encaissé." },
+        "pharmacie": { "title": "Pharmacie & stocks", "description": "Gestion des lots en FEFO, alertes de péremption et de rupture." },
+        "hospitalisation": { "title": "Hospitalisation temps réel", "description": "Plan des lits, admissions, transferts et cahier de soins." },
+        "rh": { "title": "RH & plannings", "description": "Gardes, congés et paie du personnel soignant." },
+        "audit": { "title": "Journal d'audit immuable", "description": "Traçabilité complète de toutes les actions sensibles." },
+        "offline": { "title": "Mode hors-ligne", "description": "Les saisies continuent même en cas de coupure réseau." },
+        "multiEtablissement": { "title": "Multi-établissement & rôles", "description": "Un espace isolé et personnalisé par établissement." }
+      }
+    },
+    "pricing": {
+      "title": "Une offre pour chaque étape de votre croissance",
+      "subtitle": "Changez d'offre à tout moment depuis vos paramètres.",
+      "cta": "Démarrer avec {plan}"
+    },
+    "footer": {
+      "tagline": "ERP de gestion intégrée pour cliniques et centres de santé.",
+      "rights": "Tous droits réservés."
+    }
+  },
+  "Plans": {
+    "STARTER": { "name": "Starter", "tagline": "Pour démarrer avec une petite équipe", "highlights": ["Jusqu'à 5 comptes", "Tous les modules cliniques", "Support par email"] },
+    "PRO": { "name": "Pro", "tagline": "Pour une clinique en croissance", "highlights": ["Jusqu'à 20 comptes", "Comparatif inter-cliniques", "Support prioritaire"] },
+    "ENTERPRISE": { "name": "Enterprise", "tagline": "Pour un réseau d'établissements", "highlights": ["Comptes illimités", "Réseau de cliniques (groupe)", "Accompagnement dédié"] },
+    "maxUsers": "{count} comptes",
+    "maxUsersUnlimited": "Comptes illimités"
+  },
+  "Auth": {
+    "login": {
+      "title": "Connexion à votre espace",
+      "subtitle": "Accédez au tableau de bord de votre établissement",
+      "email": "Email",
+      "password": "Mot de passe",
+      "submit": "Se connecter",
+      "submitting": "Connexion…",
+      "noAccount": "Nouvelle clinique ?",
+      "createSpace": "Créer un espace",
+      "invalidCredentials": "Identifiants invalides",
+      "locked": "Compte temporairement verrouillé",
+      "mfaTitle": "Vérification en deux étapes",
+      "mfaSubtitle": "Saisissez le code de votre application d'authentification",
+      "mfaCode": "Code à 6 chiffres (ou code de secours)",
+      "mfaSubmit": "Valider",
+      "mfaBack": "Retour",
+      "mfaInvalid": "Code invalide ou expiré"
+    },
+    "signup": {
+      "title": "Créer l'espace de votre établissement",
+      "subtitle": "Votre établissement sera prêt en quelques minutes",
+      "organizationName": "Nom de la clinique / centre de santé",
+      "city": "Ville",
+      "country": "Pays",
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "email": "Email professionnel",
+      "password": "Mot de passe",
+      "passwordHint": "8 caractères minimum. Vous serez administrateur de cet espace.",
+      "planLabel": "Choisissez votre offre",
+      "submit": "Créer mon espace",
+      "submitting": "Création…",
+      "haveAccount": "Déjà un compte ?",
+      "login": "Se connecter",
+      "genericError": "Impossible de créer le compte"
+    }
+  },
+  "Onboarding": {
+    "stepIndicator": "Étape {current}/{total}",
+    "skip": "Passer cette étape",
+    "continue": "Continuer",
+    "back": "Retour",
+    "branding": {
+      "title": "Personnalisez votre espace",
+      "subtitle": "Donnez à votre tableau de bord l'identité de votre établissement.",
+      "logoLabel": "Logo de l'établissement (optionnel)",
+      "logoHint": "PNG, JPEG, WEBP ou SVG, 2 Mo maximum",
+      "logoUploading": "Envoi du logo…",
+      "colorLabel": "Couleur de marque",
+      "address": "Adresse",
+      "city": "Ville",
+      "country": "Pays",
+      "phone": "Téléphone",
+      "email": "Email de contact"
+    },
+    "team": {
+      "title": "Constituez votre équipe",
+      "subtitle": "Invitez vos collègues et attribuez-leur un rôle — vous pourrez toujours en ajouter plus tard depuis Paramètres.",
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "email": "Email",
+      "role": "Rôle",
+      "addButton": "Ajouter ce membre",
+      "addedTitle": "Membres ajoutés",
+      "credentialsNotice": "Mot de passe provisoire pour {email} : {password} (à communiquer une seule fois)"
+    },
+    "welcome": {
+      "title": "Bienvenue, {name}",
+      "subtitle": "Votre espace est prêt. Voici un récapitulatif de votre établissement.",
+      "planLabel": "Offre",
+      "membersLabel": "Membres de l'équipe",
+      "cta": "Accéder à mon tableau de bord"
+    }
+  }
+}

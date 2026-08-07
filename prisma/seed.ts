@@ -244,12 +244,16 @@ async function seedDemoData(organizationId: string, users: Record<string, User>,
 async function main() {
   const organization = await prisma.organization.upsert({
     where: { slug: "clinique-demo" },
-    update: {},
+    update: { onboardingCompletedAt: new Date() },
     create: {
       name: "Clinique Demo AxeHealth",
       slug: "clinique-demo",
       city: "Douala",
       country: "CM",
+      plan: "PRO",
+      // Les comptes de démo n'ont pas besoin de traverser /onboarding — ils
+      // arrivent directement sur le tableau de bord.
+      onboardingCompletedAt: new Date(),
     },
   });
 

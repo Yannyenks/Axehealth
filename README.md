@@ -1,14 +1,16 @@
 # AxeHealth v1.0 Enterprise Edition
 
-ERP de gestion intégrée pour cliniques et centres de santé en Afrique — AxeStack Technologies.
+Plateforme SaaS internationale de gestion intégrée pour cliniques et centres de santé — AxeStack Technologies.
 
 ## Stack
 
 - **Frontend/Backend**: Next.js 14 (App Router) + TypeScript
 - **UI**: TailwindCSS + Shadcn/UI + Lucide Icons
+- **i18n**: next-intl (FR/EN sur les surfaces publiques — voir section dédiée)
 - **Data fetching / state**: React Query + Zustand
 - **ORM / DB**: Prisma + PostgreSQL (multi-tenant par `organizationId`)
 - **Auth**: JWT (access + refresh) + Argon2id, RBAC strict, PIN de caisse
+- **Fichiers**: Vercel Blob (logo par établissement)
 - **Audit**: journal immuable (`AuditLog`) sur toutes les actions sensibles
 - **Offline-first**: file de mutations IndexedDB + service worker (Background Sync)
 
@@ -16,15 +18,38 @@ ERP de gestion intégrée pour cliniques et centres de santé en Afrique — Axe
 
 ```bash
 npm install
-cp .env.example .env   # renseigner DATABASE_URL, JWT_SECRET, JWT_REFRESH_SECRET
+cp .env.example .env   # renseigner DATABASE_URL, JWT_SECRET, JWT_REFRESH_SECRET, BLOB_READ_WRITE_TOKEN
 npx prisma migrate dev --name init
 npm run db:seed
 npm run dev
 ```
 
+`BLOB_READ_WRITE_TOKEN` (à créer depuis un store Vercel Blob sur le projet) n'est nécessaire que pour
+l'upload de logo pendant l'onboarding — le reste de l'app fonctionne sans, et cette étape du parcours
+reste simplement ignorable si la variable est absente.
+
 Comptes de démo créés par le seed (mot de passe `AxeHealth2026!`, PIN caisse `1234`) :
 `admin@axehealth.demo`, `medecin@axehealth.demo`, `caissier1@axehealth.demo`, `caissier2@axehealth.demo`,
 `pharmacien@axehealth.demo`, `infirmier@axehealth.demo`, `secretaire@axehealth.demo`.
+
+## Parcours SaaS: de la landing page au tableau de bord
+
+1. **Landing page** (`/`, publique) — présentation, tarifs (`lib/plans.ts`), CTA vers `/signup` ou `/login`.
+2. **Création de l'établissement** (`/signup`, publique) — nom de la clinique, localisation, compte
+   administrateur et choix d'une offre (Starter/Pro/Enterprise, scaffold sans paiement réel — voir
+   « Limites connues »). Crée le tenant (`Organization`) et son premier utilisateur `ADMIN`
+   (`services/organization.service.ts::signupOrganization`).
+3. **Assistant d'onboarding** (`/onboarding`, réservé à l'ADMIN tant que non terminé) — personnalisation
+   (logo via Vercel Blob, couleur de marque, adresse) puis constitution de l'équipe (invitation de
+   collègues avec leur rôle, étape ignorable). `POST /api/organization/onboarding` marque la fin
+   du parcours (`Organization.onboardingCompletedAt`) ; tant que ce champ est vide, l'ADMIN y est
+   redirigé automatiquement depuis le tableau de bord.
+4. **Tableau de bord** (`/dashboard`) — personnalisé avec le logo/la couleur de l'établissement
+   (`app/(dashboard)/layout.tsx`), chaque rôle ne voyant que les modules qui le concernent
+   (`lib/rbac.ts`, filtrage à la fois dans la navigation et dans chaque route API).
+
+L'équipe peut ensuite être complétée à tout moment depuis **Paramètres** (`/parametres`), qui réunit
+profil de l'organisation, gestion d'équipe, configuration des services/chambres/lits et abonnement.
 
 ## Architecture anti-fraude (caisse)
 
@@ -68,6 +93,46 @@ Toutes ces actions sont journalisées dans `AuditLog` (immuable).
   `public/sw.js` (Background Sync, avec repli sur l'événement `online` pour les navigateurs qui ne
   supportent pas cette API, notamment Safari/iOS).
 
+## Internationalisation (i18n)
+
+`next-intl` est branché sans routing par préfixe de locale (pas de `/en/...`) : la langue est résolue via
+le cookie `NEXT_LOCALE` (`i18n/request.ts`), avec un sélecteur FR/EN (`components/locale-switcher.tsx`).
+Périmètre actuel, volontairement ciblé pour ne pas risquer de régression sur les modules déjà testés :
+- **Traduites (FR/EN)** : landing page, `/login`, `/signup`, `/onboarding` (`messages/fr.json`, `messages/en.json`).
+- **Encore en français uniquement** : les 15 modules du tableau de bord (patients, caisse, pharmacie,
+  hospitalisation, RH, etc.) — chantier de traduction complète à mener séparément.
+
+## Console super-admin (plateforme)
+
+`/super-admin`, réservée aux comptes `User.isSuperAdmin` (posé uniquement par le seed — jamais par
+l'inscription self-service). Au-delà de la liste des établissements :
+
+- **KPI plateforme** (`GET /api/superadmin/kpis`) : établissements actifs/suspendus, nouveaux ce mois,
+  répartition par offre, **MRR estimé** (nb d'établissements actifs × prix indicatif de `lib/plans.ts` —
+  une estimation, aucun paiement réel branché) et **volume d'affaires réel** (somme des paiements validés,
+  tous établissements, agrégée — jamais le détail patient/facture).
+- **Gestion des offres** : changement de plan par établissement, appliqué immédiatement (`PATCH
+  /api/superadmin/organisations/[id]`), cohérent avec l'absence de facturation réelle.
+- **Mode assistance** (`POST /api/superadmin/organisations/[id]/assistance`) : accès complet et tracé à
+  un établissement, comme si le super-admin en était l'ADMIN. Techniquement, un compte technique réel
+  (`User.isSupportAccount`) est créé par établissement au premier usage — jamais connectable via
+  `/api/auth/login`, jamais visible dans l'équipe du client (`services/team.service.ts`) — et le super-admin
+  bascule dessus via un token JWT dédié (claim `impersonatedBy`), son token d'origine étant conservé dans
+  un cookie séparé pour permettre le retour (`POST /api/superadmin/assistance/exit`). Un bandeau permanent
+  (`components/assistance-banner.tsx`) signale la session active ; chaque entrée/sortie est journalisée
+  (`ASSISTANCE_SESSION_STARTED`/`ASSISTANCE_SESSION_ENDED`). Une session d'assistance ne porte jamais
+  `isSuperAdmin` — elle ne peut donc ni démarrer une autre assistance, ni lister les organisations : la
+  sortie explicite est l'unique chemin de retour aux privilèges plateforme.
+
+## Offres / scaffold commercial
+
+`lib/plans.ts` définit trois offres (Starter/Pro/Enterprise) affichées sur la landing page, choisies à
+l'inscription et visibles en lecture seule dans Paramètres/Console plateforme. **Aucune intégration de
+paiement n'est branchée** : `Organization.plan` et `trialEndsAt` sont posés à l'inscription mais rien ne
+facture ni ne bloque un compte en fin d'essai — à faire avant un lancement commercial réel (Stripe ou
+équivalent), de même que l'application stricte des limites de comptes par offre (actuellement juste
+affichée à titre indicatif dans Paramètres).
+
 ## Limites connues et travail restant
 
 - **Intégrations paiement/communication** : les endpoints/payloads exacts MTN MoMo, Orange Money et Wave
@@ -82,5 +147,11 @@ Toutes ces actions sont journalisées dans `AuditLog` (immuable).
   reste à faire.
 - **Offline-first** : couvre la mise en file des écritures (POST/PATCH) hors-ligne ; ne couvre pas encore le
   cache d'assets applicatifs (App Shell) pour un fonctionnement 100% hors-ligne en lecture.
-- **UI** : seule la page de connexion existe pour l'instant (`app/(auth)/login`) ; les écrans métier
-  (dashboard, caisse, dossiers patients, etc.) restent à construire au-dessus de cette API.
+- **Facturation SaaS et sous-domaine par établissement** : voir « Offres / scaffold commercial » ci-dessus —
+  aucun paiement réel, pas de sous-domaine/domaine personnalisé par clinique pour l'instant.
+- **Invitation d'équipe** : mot de passe provisoire affiché une seule fois à l'écran (aucun envoi d'email),
+  et pas encore d'édition/suppression des services/chambres créés (création uniquement).
+- **Durée des sessions** : aucun flux de refresh token n'est branché (le endpoint existe dans `lib/auth.ts`
+  mais aucune route `/api/auth/refresh` ne l'utilise) — chaque session, y compris une session d'assistance
+  super-admin, expire après 15 minutes et nécessite une reconnexion. À traiter avant un usage intensif du
+  mode assistance sur de longues interventions.
