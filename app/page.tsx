@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { PLAN_DEFINITIONS } from "@/lib/plans";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { DnaHelix } from "@/components/landing/dna-helix";
 
 const FEATURE_ICONS = {
   patients: Users,
@@ -57,7 +58,8 @@ export default async function LandingPage() {
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_hsl(var(--primary)/0.12),_transparent_60%)]" />
         <div className="mx-auto max-w-4xl px-6 py-24 text-center">
-          <p className="mb-4 inline-block rounded-full border bg-muted px-4 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <DnaHelix />
+          <p className="mb-4 mt-2 inline-block rounded-full border bg-muted px-4 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {t("hero.eyebrow")}
           </p>
           <h1 className="font-display text-4xl font-bold tracking-tight sm:text-5xl">{t("hero.title")}</h1>
