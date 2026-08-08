@@ -10,7 +10,7 @@ super-admin »). Déploiement production sur `master`, redéployé automatiqueme
 
 - **Frontend/Backend**: Next.js 14 (App Router) + TypeScript
 - **UI**: TailwindCSS + Shadcn/UI + Lucide Icons
-- **i18n**: next-intl (FR/EN sur les surfaces publiques — voir section dédiée)
+- **i18n**: next-intl (FR/EN/PT sur les surfaces publiques — voir section dédiée)
 - **Data fetching / state**: React Query + Zustand
 - **ORM / DB**: Prisma + PostgreSQL (multi-tenant par `organizationId`)
 - **Auth**: JWT (access + refresh) + Argon2id, RBAC strict, PIN de caisse
@@ -125,9 +125,12 @@ Toutes ces actions sont journalisées dans `AuditLog` (immuable).
 ## Internationalisation (i18n)
 
 `next-intl` est branché sans routing par préfixe de locale (pas de `/en/...`) : la langue est résolue via
-le cookie `NEXT_LOCALE` (`i18n/request.ts`), avec un sélecteur FR/EN (`components/locale-switcher.tsx`).
-Périmètre actuel, volontairement ciblé pour ne pas risquer de régression sur les modules déjà testés :
-- **Traduites (FR/EN)** : landing page, `/login`, `/signup`, `/onboarding` (`messages/fr.json`, `messages/en.json`).
+le cookie `NEXT_LOCALE` (`i18n/request.ts`), avec un sélecteur FR/EN/PT (`components/locale-switcher.tsx`).
+Le portugais a été ajouté pour couvrir le Cap-Vert (`CV` dans `lib/countries.ts`). Périmètre actuel,
+volontairement ciblé pour ne pas risquer de régression sur les modules déjà testés :
+- **Traduites (FR/EN/PT)** : landing page, `/login`, `/signup`, `/onboarding` (`messages/fr.json`,
+  `messages/en.json`, `messages/pt.json`). Ajouter une langue = ajouter son code à `SUPPORTED_LOCALES`
+  (`i18n/locales.ts`) + un fichier `messages/<code>.json` avec les mêmes clés.
 - **Encore en français uniquement** : les 15 modules du tableau de bord (patients, caisse, pharmacie,
   hospitalisation, RH, etc.) — chantier de traduction complète à mener séparément.
 

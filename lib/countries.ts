@@ -3,7 +3,7 @@
 // de 249 pays. Les libellés sont dérivés via Intl.DisplayNames pour rester
 // automatiquement traduits dans chaque langue supportée.
 export const COUNTRY_CODES = [
-  "CM", "SN", "CI", "TG", "BJ", "GA", "CD", "NE", "ML", "BF", "GN", "GA", "RW", "MA", "DZ", "TN", "NG", "GH", "KE",
+  "CM", "SN", "CI", "TG", "BJ", "GA", "CD", "NE", "ML", "BF", "GN", "GA", "RW", "MA", "DZ", "TN", "NG", "GH", "KE", "CV",
   "FR", "BE", "CH", "LU", "DE", "ES", "PT", "GB", "IE",
   "CA", "US",
 ] as const;
