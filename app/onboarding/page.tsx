@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Role } from "@prisma/client";
-import { Check, Upload } from "lucide-react";
+import { Check, Upload, Sparkles, ArrowRight } from "lucide-react";
 import { api, ApiError } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth.store";
 import { PLAN_DEFINITIONS } from "@/lib/plans";
@@ -17,17 +17,11 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
-const ALL_ROLES: Role[] = ["SECRETAIRE", "MEDECIN", "INFIRMIER", "PHARMACIEN", "BIOLOGISTE", "CAISSIER", "COMPTABLE", "RH"];
+const ALL_ROLES: Role[] = ["COMPTABLE", "CAISSIER"];
 const ROLE_LABEL: Record<Role, string> = {
   ADMIN: "Admin",
-  SECRETAIRE: "Secrétaire",
-  MEDECIN: "Médecin",
-  INFIRMIER: "Infirmier",
-  PHARMACIEN: "Pharmacien",
-  BIOLOGISTE: "Biologiste",
-  CAISSIER: "Caissier",
   COMPTABLE: "Comptable",
-  RH: "RH",
+  CAISSIER: "Caissier",
 };
 
 interface OrganizationDto {
@@ -43,7 +37,7 @@ interface OrganizationDto {
   plan: "STARTER" | "PRO" | "ENTERPRISE";
 }
 
-const TOTAL_STEPS = 3;
+const TOTAL_STEPS = 4;
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(1);
@@ -52,8 +46,9 @@ export default function OnboardingPage() {
     <div className="space-y-6">
       <StepIndicator step={step} />
       {step === 1 && <BrandingStep onNext={() => setStep(2)} />}
-      {step === 2 && <TeamStep onNext={() => setStep(3)} onBack={() => setStep(1)} />}
-      {step === 3 && <WelcomeStep onBack={() => setStep(2)} />}
+      {step === 2 && <AuditStep onNext={() => setStep(3)} onBack={() => setStep(1)} />}
+      {step === 3 && <TeamStep onNext={() => setStep(4)} onBack={() => setStep(2)} />}
+      {step === 4 && <WelcomeStep onBack={() => setStep(3)} />}
     </div>
   );
 }
@@ -209,18 +204,226 @@ function BrandingStep({ onNext }: { onNext: () => void }) {
   );
 }
 
+interface BusinessAuditAnswers {
+  secteurActivite: string;
+  tailleEquipe: string;
+  chiffreAffairesEstime: string;
+  gestionComptableActuelle: string;
+  principalDefiFinancier: string;
+  obligationsFiscales: string;
+}
+
+interface BusinessAuditDiagnostic {
+  secteurActivite: string;
+  maturiteComptable: "DEBUTANT" | "INTERMEDIAIRE" | "AVANCE";
+  principauxRisques: string[];
+  prioritesRecommandees: string[];
+  modulesRecommandes: string[];
+  syntheseTexte: string;
+}
+
+const MATURITY_LABEL: Record<BusinessAuditDiagnostic["maturiteComptable"], string> = {
+  DEBUTANT: "Comptabilité à structurer",
+  INTERMEDIAIRE: "Comptabilité partiellement structurée",
+  AVANCE: "Comptabilité déjà mature",
+};
+
+type AuditQuestion =
+  | { key: keyof BusinessAuditAnswers; question: string; type: "select"; options: string[] }
+  | { key: keyof BusinessAuditAnswers; question: string; type: "text"; placeholder: string; optional?: boolean };
+
+const AUDIT_QUESTIONS: AuditQuestion[] = [
+  {
+    key: "secteurActivite",
+    question: "Quel est le secteur d'activité principal de votre entreprise ?",
+    type: "select",
+    options: ["Commerce / Négoce", "Services", "Industrie / Production", "BTP / Construction", "Agriculture", "Technologie / IT", "Autre"],
+  },
+  {
+    key: "tailleEquipe",
+    question: "Combien de personnes travaillent dans votre entreprise ?",
+    type: "select",
+    options: ["1 (solo)", "2 à 5", "6 à 20", "21 à 50", "Plus de 50"],
+  },
+  {
+    key: "chiffreAffairesEstime",
+    question: "Quel est approximativement votre chiffre d'affaires annuel ?",
+    type: "select",
+    options: ["Moins de 10M XAF", "10M à 50M XAF", "50M à 200M XAF", "200M à 1Md XAF", "Plus de 1Md XAF"],
+  },
+  {
+    key: "gestionComptableActuelle",
+    question: "Comment gérez-vous votre comptabilité aujourd'hui ?",
+    type: "select",
+    options: ["Rien de structuré", "Excel / papier", "Un(e) comptable externe", "Un logiciel existant"],
+  },
+  {
+    key: "principalDefiFinancier",
+    question: "Quel est votre plus grand défi financier en ce moment ?",
+    type: "text",
+    placeholder: "Ex: suivre ma trésorerie, ne pas rater mes déclarations TVA, factures en retard…",
+  },
+  {
+    key: "obligationsFiscales",
+    question: "Des obligations fiscales particulières à surveiller (TVA, IS, CNPS…) ?",
+    type: "text",
+    placeholder: "Optionnel",
+    optional: true,
+  },
+];
+
+// Interview d'accueil menée par le copilote IA (voir services/business-audit.service.ts):
+// une question à la fois, comme un expert-comptable qui prend connaissance
+// d'un nouveau dossier client, pour produire un diagnostic qui personnalise
+// le tableau de bord. Sautable à tout moment — jamais bloquant.
+function AuditStep({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
+  const [index, setIndex] = useState(0);
+  const [answers, setAnswers] = useState<BusinessAuditAnswers>({
+    secteurActivite: "",
+    tailleEquipe: "",
+    chiffreAffairesEstime: "",
+    gestionComptableActuelle: "",
+    principalDefiFinancier: "",
+    obligationsFiscales: "",
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [diagnostic, setDiagnostic] = useState<BusinessAuditDiagnostic | null>(null);
+
+  const submit = useMutation({
+    mutationFn: () => api.post<{ organization: { businessProfile: BusinessAuditDiagnostic } }>("/api/organization/business-audit", answers),
+    onSuccess: (result) => setDiagnostic(result.organization.businessProfile),
+    onError: (e) => setError(e instanceof ApiError ? e.message : "Une erreur est survenue"),
+  });
+
+  if (diagnostic) {
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-amber-400">
+              <Sparkles className="h-4 w-4 text-emerald-950" />
+            </div>
+            <CardTitle>Votre diagnostic</CardTitle>
+          </div>
+          <p className="text-sm text-muted-foreground">{diagnostic.syntheseTexte}</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2 text-xs">
+            <span className="rounded-full bg-primary/10 px-3 py-1 font-medium text-primary">{diagnostic.secteurActivite}</span>
+            <span className="rounded-full bg-muted px-3 py-1 font-medium text-muted-foreground">{MATURITY_LABEL[diagnostic.maturiteComptable]}</span>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <p className="text-sm font-medium">Points de vigilance</p>
+              <ul className="mt-2 space-y-1.5 text-sm text-muted-foreground">
+                {diagnostic.principauxRisques.map((risque, i) => (
+                  <li key={i}>• {risque}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <p className="text-sm font-medium">Priorités recommandées</p>
+              <ul className="mt-2 space-y-1.5 text-sm text-muted-foreground">
+                {diagnostic.prioritesRecommandees.map((priorite, i) => (
+                  <li key={i}>• {priorite}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <Button onClick={onNext}>
+              Continuer <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const current = AUDIT_QUESTIONS[index];
+  const value = answers[current.key];
+  const isLast = index === AUDIT_QUESTIONS.length - 1;
+  const canAdvance = current.type === "text" && current.optional ? true : value.trim().length > 0;
+
+  function handleNext() {
+    if (isLast) {
+      submit.mutate();
+      return;
+    }
+    setIndex((i) => i + 1);
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-amber-400">
+            <Sparkles className="h-4 w-4 text-emerald-950" />
+          </div>
+          <CardTitle>Audit express par l'IA</CardTitle>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Quelques questions simples pour que votre tableau de bord soit personnalisé dès le premier jour.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        {error && <p className="text-sm text-destructive">{error}</p>}
+
+        <div className="flex gap-1.5">
+          {AUDIT_QUESTIONS.map((_, i) => (
+            <div key={i} className={cn("h-1 flex-1 rounded-full", i <= index ? "bg-primary" : "bg-muted")} />
+          ))}
+        </div>
+
+        <div className="rounded-lg border bg-muted/30 p-4">
+          <p className="text-sm font-medium">{current.question}</p>
+        </div>
+
+        {current.type === "select" ? (
+          <Select value={value} onChange={(e) => setAnswers({ ...answers, [current.key]: e.target.value })}>
+            <option value="">Sélectionner…</option>
+            {current.options.map((option) => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </Select>
+        ) : (
+          <Input
+            value={value}
+            placeholder={current.placeholder}
+            onChange={(e) => setAnswers({ ...answers, [current.key]: e.target.value })}
+          />
+        )}
+
+        <div className="flex justify-between gap-2">
+          <Button variant="outline" onClick={index === 0 ? onBack : () => setIndex((i) => i - 1)}>
+            {index === 0 ? "Retour" : "Précédent"}
+          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onNext}>Passer cette étape</Button>
+            <Button disabled={!canAdvance || submit.isPending} onClick={handleNext}>
+              {isLast ? (submit.isPending ? "Analyse en cours…" : "Obtenir mon diagnostic") : "Suivant"}
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function TeamStep({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
   const t = useTranslations("Onboarding.team");
   const tCommon = useTranslations("Onboarding");
   const [members, setMembers] = useState<{ email: string; firstName: string; lastName: string; role: Role; tempPassword: string }[]>([]);
-  const [form, setForm] = useState({ email: "", firstName: "", lastName: "", role: "SECRETAIRE" as Role });
+  const [form, setForm] = useState({ email: "", firstName: "", lastName: "", role: "CAISSIER" as Role });
   const [error, setError] = useState<string | null>(null);
 
   const invite = useMutation({
     mutationFn: () => api.post<{ user: { email: string; firstName: string; lastName: string; role: Role }; tempPassword: string }>("/api/team", form),
     onSuccess: (result) => {
       setMembers((prev) => [...prev, { ...result.user, tempPassword: result.tempPassword }]);
-      setForm({ email: "", firstName: "", lastName: "", role: "SECRETAIRE" });
+      setForm({ email: "", firstName: "", lastName: "", role: "CAISSIER" });
       setError(null);
     },
     onError: (e) => setError(e instanceof ApiError ? e.message : "Une erreur est survenue"),

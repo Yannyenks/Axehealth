@@ -8,6 +8,7 @@ import { useAuthStore, type AuthUser } from "@/stores/auth.store";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Topbar } from "@/components/topbar";
 import { AssistanceBanner } from "@/components/assistance-banner";
+import { CfoAssistantFloating } from "@/components/ai/CfoAssistantFloating";
 import { hexToHslTriplet, isValidHexColor } from "@/lib/color";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -56,6 +57,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <main className="flex-1 overflow-y-auto bg-muted/30 p-8 print:bg-white print:p-0">{children}</main>
         </div>
       </div>
+      <CfoAssistantFloating />
     </div>
   );
 }

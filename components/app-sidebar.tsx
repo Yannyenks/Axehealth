@@ -3,23 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Role } from "@prisma/client";
-import {
-  LayoutDashboard,
-  Users,
-  Stethoscope,
-  Wallet,
-  Pill,
-  BedDouble,
-  UserCog,
-  Receipt,
-  ScrollText,
-  Settings,
-  BellRing,
-  ShieldCheck,
-  FlaskConical,
-  LogOut,
-  Network,
-} from "lucide-react";
+import { LayoutDashboard, BookText, ScrollText, Settings, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth.store";
@@ -43,39 +27,17 @@ interface NavGroup {
 const NAV_GROUPS: NavGroup[] = [
   {
     label: "Pilotage",
-    items: [
-      { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard, roles: PERMISSIONS.dashboards.read },
-      { href: "/alertes", label: "Alertes", icon: BellRing, roles: PERMISSIONS.alertes.manage },
-    ],
+    items: [{ href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard, roles: PERMISSIONS.comptabilite.read }],
   },
   {
-    label: "Soins",
-    items: [
-      { href: "/patients", label: "Patients (DPI)", icon: Users, roles: PERMISSIONS.patients.read },
-      { href: "/consultations", label: "Consultations", icon: Stethoscope, roles: PERMISSIONS.consultations.read },
-      { href: "/laboratoire", label: "Laboratoire", icon: FlaskConical, roles: PERMISSIONS.laboratoire.read },
-      { href: "/hospitalisation", label: "Hospitalisation", icon: BedDouble, roles: PERMISSIONS.hospitalisation.read },
-    ],
-  },
-  {
-    label: "Finance",
-    items: [
-      { href: "/caisse", label: "Caisse", icon: Wallet, roles: PERMISSIONS.caisse.encaisser },
-      { href: "/factures", label: "Factures", icon: Receipt, roles: PERMISSIONS.factures.read },
-      { href: "/assurances", label: "Tiers-payant", icon: ShieldCheck, roles: PERMISSIONS.assurances.read },
-    ],
-  },
-  {
-    label: "Logistique",
-    items: [{ href: "/pharmacie", label: "Pharmacie", icon: Pill, roles: PERMISSIONS.pharmacie.read }],
+    label: "Comptabilité",
+    items: [{ href: "/comptabilite", label: "Écritures & journaux", icon: BookText, roles: PERMISSIONS.comptabilite.read }],
   },
   {
     label: "Administration",
     items: [
-      { href: "/rh", label: "RH & congés", icon: UserCog, roles: PERMISSIONS.conges.demander },
       { href: "/audit", label: "Journal d'audit", icon: ScrollText, roles: ["ADMIN"] },
       { href: "/parametres", label: "Paramètres", icon: Settings, roles: ["ADMIN"] },
-      { href: "/groupe", label: "Comparatif inter-cliniques", icon: Network, roles: PERMISSIONS.groupe.read },
     ],
   },
 ];
@@ -111,8 +73,8 @@ export function AppSidebar() {
           </div>
         )}
         <div className="min-w-0">
-          <p className="truncate font-display text-base font-bold leading-tight text-white">{org?.name ?? "AxeHealth"}</p>
-          <p className="text-[11px] leading-tight text-sidebar-muted">Propulsé par AxeHealth</p>
+          <p className="truncate font-display text-base font-bold leading-tight text-white">{org?.name ?? "AxeCompta"}</p>
+          <p className="text-[11px] leading-tight text-sidebar-muted">Propulsé par AxeCompta</p>
         </div>
       </div>
 

@@ -74,7 +74,7 @@ export function verifyTotp(base32Secret: string, token: string, at: number = Dat
   return false;
 }
 
-export function buildOtpAuthUri(base32Secret: string, accountEmail: string, issuer = "AxeHealth"): string {
+export function buildOtpAuthUri(base32Secret: string, accountEmail: string, issuer = "AxeCompta"): string {
   const label = encodeURIComponent(`${issuer}:${accountEmail}`);
   return `otpauth://totp/${label}?secret=${base32Secret}&issuer=${encodeURIComponent(issuer)}&digits=${DIGITS}&period=${STEP_SECONDS}`;
 }

@@ -13,12 +13,6 @@ describe("mots de passe et PIN (Argon2id)", () => {
     expect(await verifyPassword(hash, "MauvaisMotDePasse")).toBe(false);
   });
 
-  it("le PIN de caisse suit le même mécanisme, indépendant du mot de passe", async () => {
-    const { hashPin, verifyPin } = await import("./auth");
-    const hash = await hashPin("1234");
-    expect(await verifyPin(hash, "1234")).toBe(true);
-    expect(await verifyPin(hash, "4321")).toBe(false);
-  });
 });
 
 describe("jetons JWT", () => {
@@ -38,14 +32,14 @@ describe("jetons JWT", () => {
 
   it("extrait le token depuis le cookie httpOnly quand il n'y a pas de header Authorization", async () => {
     const { getBearerToken } = await import("./auth");
-    const req = new Request("http://localhost/api/test", { headers: { cookie: "autre=x; axehealth_token=abc123; suite=y" } });
+    const req = new Request("http://localhost/api/test", { headers: { cookie: "autre=x; axecompta_token=abc123; suite=y" } });
     expect(getBearerToken(req)).toBe("abc123");
   });
 
   it("préfère le header Authorization quand les deux sont présents", async () => {
     const { getBearerToken } = await import("./auth");
     const req = new Request("http://localhost/api/test", {
-      headers: { authorization: "Bearer depuis-header", cookie: "axehealth_token=depuis-cookie" },
+      headers: { authorization: "Bearer depuis-header", cookie: "axecompta_token=depuis-cookie" },
     });
     expect(getBearerToken(req)).toBe("depuis-header");
   });

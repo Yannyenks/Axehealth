@@ -50,7 +50,7 @@ describe("Inscription self-service avec sélection d'offre", () => {
   });
 
   it("crée l'organisation avec l'offre choisie, une période d'essai, et l'onboarding non terminé", async () => {
-    userEmail = `admin-${Date.now()}@test.axehealth.demo`;
+    userEmail = `admin-${Date.now()}@test.axecompta.demo`;
 
     const { organization, user } = await signupOrganization({
       organizationName: "Clinique du Test",

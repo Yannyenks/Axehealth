@@ -15,27 +15,22 @@ describe("Console super-admin", () => {
   const slug = `test-superadmin-${Date.now()}`;
 
   beforeAll(async () => {
-    const organization = await prisma.organization.create({ data: { name: "Clinique Test SuperAdmin", slug } });
+    const organization = await prisma.organization.create({ data: { name: "Entreprise Test SuperAdmin", slug } });
     organizationId = organization.id;
-
-    await prisma.patient.create({
-      data: { organizationId, patientNumber: `PAT-SA-${Date.now()}`, firstName: "Patient", lastName: "SuperAdmin", sexe: "F", dateNaissance: new Date("1990-01-01") },
-    });
   });
 
   afterAll(async () => {
     await prisma.organization.delete({ where: { id: organizationId } });
   });
 
-  it("liste les organisations avec leurs compteurs d'usage et le CA du mois", async () => {
+  it("liste les organisations avec leurs compteurs d'usage", async () => {
     const organizations = await listOrganizationsWithUsage();
     const org = organizations.find((o) => o.id === organizationId);
 
     expect(org).toBeDefined();
     expect(org?.isActive).toBe(true);
-    expect(org?.patients).toBe(1);
+    expect(org?.ecritures).toBe(0);
     expect(org?.utilisateurs).toBe(0);
-    expect(org?.caEncaisseMois).toBe("0");
   });
 
   it("suspend puis réactive une organisation", async () => {
@@ -70,7 +65,7 @@ describe("Compte support (mode assistance)", () => {
   const slug = `test-support-account-${Date.now()}`;
 
   beforeAll(async () => {
-    const organization = await prisma.organization.create({ data: { name: "Clinique Test Assistance", slug } });
+    const organization = await prisma.organization.create({ data: { name: "Entreprise Test Assistance", slug } });
     organizationId = organization.id;
   });
 

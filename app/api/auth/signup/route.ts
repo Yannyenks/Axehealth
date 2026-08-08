@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
       { status: 201 },
     );
 
-    response.cookies.set("axehealth_token", accessToken, {
+    response.cookies.set("axecompta_token", accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",

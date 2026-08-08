@@ -14,7 +14,7 @@ function slugify(name: string): string {
 }
 
 async function uniqueSlug(base: string): Promise<string> {
-  const root = slugify(base) || "clinique";
+  const root = slugify(base) || "entreprise";
   let slug = root;
   let attempt = 0;
 
@@ -30,7 +30,7 @@ const TRIAL_DURATION_DAYS = 30;
 
 // Inscription self-service: crée l'organisation (le tenant) et son premier
 // utilisateur, avec le rôle ADMIN — c'est ce compte qui invitera/créera
-// ensuite le reste de l'équipe (médecins, caissiers, etc.) depuis l'app, et
+// ensuite le reste de l'équipe (comptables, caissiers) depuis l'app, et
 // qui sera redirigé vers /onboarding tant que le profil n'est pas complété.
 export async function signupOrganization(input: SignupInput) {
   const existingUser = await prisma.user.findUnique({ where: { email: input.email } });

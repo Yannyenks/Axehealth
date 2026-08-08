@@ -59,7 +59,7 @@ export default function SignupPage() {
     <main className="flex min-h-screen items-center justify-center bg-muted px-4 py-10">
       <form onSubmit={handleSubmit} className="w-full max-w-lg space-y-5 rounded-lg border bg-card p-8 shadow-sm">
         <div className="flex items-center justify-between">
-          <Link href="/" className="font-display text-xl font-bold text-primary">AxeHealth</Link>
+          <Link href="/" className="font-display text-xl font-bold text-primary">AxeCompta</Link>
           <LocaleSwitcher />
         </div>
 

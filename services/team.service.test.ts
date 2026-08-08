@@ -33,10 +33,10 @@ describe("Gestion de l'équipe (utilisateurs)", () => {
       email: `nouveau-${Date.now()}@test.demo`,
       firstName: "Jean",
       lastName: "Nouveau",
-      role: "MEDECIN",
+      role: "COMPTABLE",
     });
 
-    expect(user.role).toBe("MEDECIN");
+    expect(user.role).toBe("COMPTABLE");
     expect(user.isActive).toBe(true);
     expect(tempPassword).toHaveLength(12);
     expect(user).not.toHaveProperty("passwordHash");
@@ -44,9 +44,9 @@ describe("Gestion de l'équipe (utilisateurs)", () => {
 
   it("refuse de créer un compte avec un email déjà utilisé", async () => {
     const email = `duplique-${Date.now()}@test.demo`;
-    await createTeamMember(organizationId, { email, firstName: "A", lastName: "B", role: "SECRETAIRE" });
+    await createTeamMember(organizationId, { email, firstName: "A", lastName: "B", role: "CAISSIER" });
 
-    await expect(createTeamMember(organizationId, { email, firstName: "C", lastName: "D", role: "SECRETAIRE" })).rejects.toThrow(ConflictError);
+    await expect(createTeamMember(organizationId, { email, firstName: "C", lastName: "D", role: "CAISSIER" })).rejects.toThrow(ConflictError);
   });
 
   it("liste les membres, actifs et inactifs", async () => {
@@ -55,10 +55,10 @@ describe("Gestion de l'équipe (utilisateurs)", () => {
   });
 
   it("ne renvoie jamais le hash du mot de passe lors d'une mise à jour", async () => {
-    const { user } = await createTeamMember(organizationId, { email: `safe-update-${Date.now()}@test.demo`, firstName: "A", lastName: "B", role: "SECRETAIRE" });
-    const updated = await updateTeamMember(organizationId, user.id, adminId, { role: "INFIRMIER" });
+    const { user } = await createTeamMember(organizationId, { email: `safe-update-${Date.now()}@test.demo`, firstName: "A", lastName: "B", role: "CAISSIER" });
+    const updated = await updateTeamMember(organizationId, user.id, adminId, { role: "COMPTABLE" });
     expect(updated).not.toHaveProperty("passwordHash");
-    expect(updated.role).toBe("INFIRMIER");
+    expect(updated.role).toBe("COMPTABLE");
   });
 
   it("empêche un administrateur de se désactiver lui-même", async () => {

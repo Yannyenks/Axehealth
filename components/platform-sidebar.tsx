@@ -10,9 +10,9 @@ import { useAuthStore } from "@/stores/auth.store";
 const NAV_ITEMS = [{ href: "/super-admin", label: "Vue d'ensemble", icon: LayoutDashboard }];
 
 // Shell dédié à la console plateforme — délibérément distinct de AppSidebar
-// (aucun module clinique, pas de branding d'établissement) pour qu'un
-// super-admin sache immédiatement qu'il est sorti du contexte d'une clinique
-// pour piloter la plateforme AxeHealth elle-même.
+// (aucun module comptable, pas de branding d'organisation) pour qu'un
+// super-admin sache immédiatement qu'il est sorti du contexte d'une
+// organisation cliente pour piloter la plateforme AxeCompta elle-même.
 export function PlatformSidebar() {
   const pathname = usePathname();
   const { clear } = useAuthStore();
@@ -30,7 +30,7 @@ export function PlatformSidebar() {
           <ShieldCheck className="h-4 w-4" />
         </div>
         <div>
-          <p className="font-display text-base font-bold leading-tight text-white">AxeHealth</p>
+          <p className="font-display text-base font-bold leading-tight text-white">AxeCompta</p>
           <p className="text-[11px] font-semibold uppercase leading-tight tracking-wide text-warning">Console plateforme</p>
         </div>
       </div>
@@ -62,7 +62,7 @@ export function PlatformSidebar() {
           className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         >
           <Building2 className="h-4 w-4" />
-          Retour à mon espace clinique
+          Retour à mon espace
         </Link>
         <button
           onClick={handleLogout}
