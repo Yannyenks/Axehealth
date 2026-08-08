@@ -36,3 +36,11 @@ prisma/dev.db
 *.njsproj
 *.sln
 *.sw?
+
+.vercel
+.env*
+
+# Outils/assistants locaux (état machine, non lié au projet)
+.claude/
+.agents/
+skills-lock.json

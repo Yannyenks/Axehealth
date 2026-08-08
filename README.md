@@ -2,6 +2,10 @@
 
 Plateforme SaaS internationale de gestion intégrée pour cliniques et centres de santé — AxeStack Technologies.
 
+**En ligne** : https://axehealth.vercel.app (Vercel + PostgreSQL Neon + Vercel Blob).
+Compte de démo : `admin@axehealth.demo` / `AxeHealth2026!` (super-admin plateforme — voir « Console
+super-admin »). Déploiement production sur `master`, redéployé automatiquement à chaque push.
+
 ## Stack
 
 - **Frontend/Backend**: Next.js 14 (App Router) + TypeScript
@@ -31,6 +35,31 @@ reste simplement ignorable si la variable est absente.
 Comptes de démo créés par le seed (mot de passe `AxeHealth2026!`, PIN caisse `1234`) :
 `admin@axehealth.demo`, `medecin@axehealth.demo`, `caissier1@axehealth.demo`, `caissier2@axehealth.demo`,
 `pharmacien@axehealth.demo`, `infirmier@axehealth.demo`, `secretaire@axehealth.demo`.
+
+## Déploiement (Vercel)
+
+Projet lié à `axso-s-projects/axehealth`, déployé automatiquement à chaque push sur `master`. Base
+PostgreSQL et stockage provisionnés via le marketplace Vercel :
+
+- **Base de données** : Neon (`vercel install neon --claim`), connectée aux environnements
+  Production/Preview/Development — injecte `DATABASE_URL` automatiquement.
+- **Logos** : store Vercel Blob public (`vercel blob create-store <nom> --access public`).
+- **Secrets** (`JWT_SECRET`, `JWT_REFRESH_SECRET`, `ENCRYPTION_KEY`, `CRON_SECRET`) : générés
+  aléatoirement par environnement, jamais réutilisés depuis `.env` local — `vercel env add <NAME> <env>
+  --value <valeur> --sensitive` (`--sensitive` non supporté sur Development).
+- **Protection de déploiement** : désactivée (`ssoProtection: null`) — sans ça, les URLs `*.vercel.app`
+  exigent une connexion à l'équipe Vercel, ce qui bloque l'accès public à une landing page/API SaaS.
+- **Cron** (`vercel.json`) : réglé à une fois par jour — le plan Hobby ne supporte pas les crons
+  infra-journaliers (`*/15 * * * *` nécessite Pro).
+- **argon2** (hashage de mot de passe) embarque un binaire natif que le bundling standard de Vercel
+  casse en production (`No native build was found for platform=linux...`). Deux réglages sont
+  nécessaires dans `next.config.js` (`experimental.serverComponentsExternalPackages` **et**
+  `experimental.outputFileTracingIncludes` pointant vers `node_modules/argon2/prebuilds/**/*`) — le
+  premier seul ne suffit pas, le traçage de fichiers de Vercel exclut quand même le binaire sans le
+  second.
+
+Migrations à appliquer manuellement après un changement de schéma (pas de hook de build automatique) :
+`DATABASE_URL="<url de prod>" npx prisma migrate deploy`.
 
 ## Parcours SaaS: de la landing page au tableau de bord
 
