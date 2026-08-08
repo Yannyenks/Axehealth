@@ -1,6 +1,6 @@
 import { openDB, type IDBPDatabase } from "idb";
 
-const DB_NAME = "axecompta-offline";
+const DB_NAME = "axehealth-offline";
 const DB_VERSION = 1;
 export const MUTATION_STORE = "mutation-queue";
 export const CACHE_STORE = "read-cache";

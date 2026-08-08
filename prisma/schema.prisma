@@ -1,7 +1,6 @@
 // ============================================================================
-// AxeCompta Enterprise Edition — Schéma Prisma
-// SaaS multi-tenant de comptabilité générale, analytique et fiscale
-// (SYSCOHADA révisé) pour PME et cabinets comptables en Afrique.
+// AxeHealth v1.0 Enterprise Edition — Schéma Prisma
+// ERP multi-tenant pour cliniques et centres de santé en Afrique
 // ============================================================================
 
 generator client {
@@ -17,9 +16,9 @@ datasource db {
 // MULTI-TENANT
 // ============================================================================
 
-// Une Organization = une entreprise / un cabinet comptable (isolation par
-// tenant). Toutes les entités métier portent un organizationId indexé pour
-// garantir l'étanchéité des données entre organisations sur un schéma partagé.
+// Une Organization = une clinique / un centre de santé (isolation par tenant).
+// Toutes les entités métier portent un organizationId indexé pour garantir
+// l'étanchéité des données entre établissements sur un schéma partagé.
 model Organization {
   id        String   @id @default(cuid())
   name      String
@@ -33,8 +32,8 @@ model Organization {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Personnalisation (logo/couleur affichés dans la sidebar et injectés en
-  // variable CSS — voir app/(dashboard)/layout.tsx).
+  // Personnalisation par établissement (logo/couleur affichés dans la sidebar
+  // et injectés en variable CSS — voir app/(dashboard)/layout.tsx).
   logoUrl      String?
   primaryColor String?
 
@@ -47,41 +46,38 @@ model Organization {
   // l'ADMIN de l'organisation est redirigé vers l'assistant à la connexion.
   onboardingCompletedAt DateTime?
 
-  // Diagnostic produit par le copilote IA pendant l'étape d'audit de
-  // l'onboarding (voir services/business-audit.service.ts): secteur, taille,
-  // maturité comptable, risques et modules recommandés — utilisé pour
-  // personnaliser le tableau de bord. auditCompletedAt reste null tant que
-  // l'étape n'a pas été exécutée (ex: utilisateur qui a sauté l'étape).
-  businessProfile   Json?
-  auditCompletedAt  DateTime?
-
-  // Rattachement optionnel à un groupe (holding, cabinet gérant plusieurs
-  // dossiers clients) — utile pour une consolidation inter-entités future,
-  // sans donner à qui que ce soit un accès direct aux données d'un autre tenant.
+  // Rattachement optionnel à un groupe pour un réseau de cliniques — permet
+  // un comparatif inter-établissements (voir /api/groupe/comparatif) sans
+  // donner à qui que ce soit un accès direct aux données d'un autre tenant.
   groupId String?
   groupe  OrganizationGroup? @relation(fields: [groupId], references: [id])
 
-  users     User[]
-  auditLogs AuditLog[]
-
-  accounts         Account[]
-  journals         Journal[]
-  journalEntries   JournalEntry[]
-  thirdParties     ThirdParty[]
-  costCenters      CostCenter[]
-  assets           Asset[]
-  scannedDocuments ScannedDocument[]
-  aiConversations  AiConversation[]
-  bankStatements   BankStatement[]
+  users            User[]
+  patients         Patient[]
+  departments      Department[]
+  consultations    Consultation[]
+  appointments     Appointment[]
+  invoices         Invoice[]
+  payments         Payment[]
+  insuranceClaims  InsuranceClaim[]
+  stockItems       StockItem[]
+  stockMovements   StockMovement[]
+  rooms            Room[]
+  beds             Bed[]
+  hospitalizations Hospitalization[]
+  shifts           Shift[]
+  payrolls         Payroll[]
+  auditLogs        AuditLog[]
+  cashRegisters     CashRegister[]
+  cashSessions      CashSession[]
+  insuranceProviders InsuranceProvider[]
+  alertRules        AlertRule[]
+  creditNotes       CreditNote[]
+  incidents         Incident[]
+  leaveRequests     LeaveRequest[]
+  patientSatisfactions PatientSatisfaction[]
 
   @@index([slug])
-}
-
-model OrganizationGroup {
-  id            String         @id @default(cuid())
-  name          String
-  createdAt     DateTime       @default(now())
-  organizations Organization[]
 }
 
 // ============================================================================
@@ -90,11 +86,17 @@ model OrganizationGroup {
 
 enum Role {
   ADMIN
-  COMPTABLE
+  SECRETAIRE
+  MEDECIN
+  INFIRMIER
+  PHARMACIEN
+  BIOLOGISTE
   CAISSIER
+  COMPTABLE
+  RH
 }
 
-// Offre commerciale de l'organisation — voir lib/plans.ts pour les libellés
+// Offre commerciale de l'établissement — voir lib/plans.ts pour les libellés
 // et limites indicatives. Pas d'intégration de paiement réelle pour l'instant.
 enum OrgPlan {
   STARTER
@@ -107,18 +109,21 @@ model User {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  email        String @unique
+  email        String  @unique
   passwordHash String // Argon2id
+  pinHash      String? // PIN caisse (clôture, empreinte numérique de session)
   firstName    String
   lastName     String
   phone        String?
   role         Role
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
 
-  isActive     Boolean   @default(true)
-  lastLoginAt  DateTime?
-  refreshToken String? // dernier refresh token émis (rotation)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  isActive      Boolean   @default(true)
+  lastLoginAt   DateTime?
+  refreshToken  String? // dernier refresh token émis (rotation)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   // Authentification à deux facteurs (TOTP, RFC 6238). totpSecret est posé
   // dès le lancement de l'activation mais totpEnabled ne passe à true
@@ -147,14 +152,756 @@ model User {
   // par le client (services/team.service.ts).
   isSupportAccount Boolean @default(false)
 
-  journalEntriesCreated    JournalEntry[]    @relation("JournalEntryCreatedBy")
-  journalEntriesValidated  JournalEntry[]    @relation("JournalEntryValidatedBy")
-  scannedDocumentsUploaded ScannedDocument[]
-  aiConversations          AiConversation[]
-  auditLogs                AuditLog[]
+  consultationsAsMedecin Consultation[]     @relation("MedecinConsultations")
+  prescriptions          Prescription[]
+  appointments           Appointment[]      @relation("AppointmentPractitioner")
+  invoicesCreated        Invoice[]          @relation("InvoiceCreatedBy")
+  paymentsReceived       Payment[]          @relation("PaymentCashier")
+  paymentsValidated      Payment[]          @relation("PaymentValidator")
+  cashSessions           CashSession[]
+  nursingNotes           NursingNote[]
+  shifts                 Shift[]
+  payroll                Payroll[]
+  auditLogs              AuditLog[]
+  stockMovements         StockMovement[]
+  alertRulesCreated      AlertRule[]
+  creditNotesIssued      CreditNote[]
+  incidentsDeclared      Incident[]
+  leaveRequests          LeaveRequest[] @relation("LeaveRequester")
+  leavesApproved         LeaveRequest[] @relation("LeaveApprover")
 
   @@index([organizationId])
   @@index([organizationId, role])
+}
+
+model Department {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name String // Consultation, Labo, Pharmacie, Hospitalisation, ...
+  code String
+
+  users         User[]
+  rooms         Room[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+}
+
+// ============================================================================
+// DOSSIER PATIENT INFORMATISÉ (DPI)
+// ============================================================================
+
+enum Sexe {
+  M
+  F
+}
+
+model Patient {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  patientNumber String // ID national / matricule interne
+  qrCode        String  @unique @default(cuid())
+  firstName     String
+  lastName      String
+  sexe          Sexe
+  dateNaissance DateTime
+  phone         String?
+  email         String?
+  adresse       String?
+  ville         String?
+
+  groupeSanguin String?
+  allergies     String[] @default([])
+  // Chiffré (AES-256-GCM, voir lib/encryption.ts) — stocke un JSON
+  // {familiaux, chirurgicaux, medicaux} chiffré en base, jamais en clair.
+  // Colonne String (pas Json) car le contenu déchiffrable n'est jamais
+  // interrogé directement en SQL, seulement lu/écrit via le service patient.
+  antecedents String?
+
+  satisfactions PatientSatisfaction[]
+
+  insuranceProviderId String?
+  insuranceProvider   InsuranceProvider? @relation(fields: [insuranceProviderId], references: [id])
+  insuranceNumber     String?
+  tiersPayantRate     Int? // % pris en charge par l'assurance (ex: 80)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  consultations    Consultation[]
+  vitalSigns       VitalSign[]
+  appointments     Appointment[]
+  invoices         Invoice[]
+  hospitalizations Hospitalization[]
+  prescriptions    Prescription[]
+
+  @@unique([organizationId, patientNumber])
+  @@index([organizationId])
+  @@index([organizationId, lastName, firstName])
+}
+
+model VitalSign {
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  consultationId String?
+  consultation   Consultation? @relation(fields: [consultationId], references: [id])
+
+  temperature   Float? // °C
+  tensionSys    Int? // mmHg
+  tensionDia    Int? // mmHg
+  pouls         Int? // bpm
+  frequenceResp Int? // /min
+  poids         Float? // kg
+  taille        Float? // cm
+  saturationO2  Int? // %
+  glycemie      Float? // g/L
+
+  recordedAt DateTime @default(now())
+
+  @@index([patientId])
+}
+
+// ============================================================================
+// CONSULTATIONS
+// ============================================================================
+
+enum ConsultationStatus {
+  PLANIFIEE
+  EN_ATTENTE_CAISSE // acte payant verrouillé tant que la caisse n'a pas débloqué
+  EN_COURS
+  TERMINEE
+  ANNULEE
+}
+
+model Consultation {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  medecinId String
+  medecin   User   @relation("MedecinConsultations", fields: [medecinId], references: [id])
+
+  appointmentId String?      @unique
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+
+  status ConsultationStatus @default(PLANIFIEE)
+
+  // Débloqué uniquement par un paiement caisse validé (double validation anti-fraude)
+  unlockedByPaymentId String?
+  unlockedAt          DateTime?
+
+  motif        String?
+  diagnostic   String? // libellé
+  diagnosticCim String? // code CIM-10 / ICD-11
+  examenClinique String?
+  notes        String?
+
+  startedAt  DateTime?
+  endedAt    DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  vitalSigns    VitalSign[]
+  prescriptions Prescription[]
+  labRequests   LabRequest[]
+  invoiceItems  InvoiceItem[]
+  satisfactions PatientSatisfaction[]
+
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([patientId])
+  @@index([medecinId])
+}
+
+// ============================================================================
+// PRESCRIPTIONS (ordonnance électronique)
+// ============================================================================
+
+model Prescription {
+  id             String  @id @default(cuid())
+  consultationId String
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  prescripteurId String
+  prescripteur   User   @relation(fields: [prescripteurId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  items PrescriptionItem[]
+
+  @@index([consultationId])
+  @@index([patientId])
+}
+
+model PrescriptionItem {
+  id             String       @id @default(cuid())
+  prescriptionId String
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+
+  stockItemId String?
+  stockItem   StockItem? @relation(fields: [stockItemId], references: [id])
+
+  denomination String // nom du médicament si hors stock catalogué
+  posologie    String
+  duree        String? // ex: "7 jours"
+  quantite     Int
+  // Alerte d'interaction médicamenteuse calculée côté service au moment de la
+  // création (vs. autres items actifs du patient) et journalisée ici.
+  interactionAlert String?
+
+  dispensedAt DateTime?
+  dispensedById String?
+
+  @@index([prescriptionId])
+}
+
+// ============================================================================
+// EXAMENS (Labo / Imagerie)
+// ============================================================================
+
+enum LabRequestType {
+  LABORATOIRE
+  IMAGERIE
+}
+
+enum LabRequestStatus {
+  DEMANDE
+  EN_COURS
+  RESULTAT_DISPONIBLE
+  ANNULE
+}
+
+model LabRequest {
+  id             String       @id @default(cuid())
+  consultationId String
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+
+  type       LabRequestType
+  libelle    String
+  status     LabRequestStatus @default(DEMANDE)
+  resultat   String?
+  resultatFileUrl String?
+
+  createdAt  DateTime @default(now())
+  completedAt DateTime?
+
+  @@index([consultationId])
+}
+
+// ============================================================================
+// RENDEZ-VOUS
+// ============================================================================
+
+enum AppointmentStatus {
+  CONFIRME
+  EN_ATTENTE
+  ANNULE
+  HONORE
+  ABSENT
+}
+
+model Appointment {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  practitionerId String
+  practitioner   User   @relation("AppointmentPractitioner", fields: [practitionerId], references: [id])
+
+  scheduledAt DateTime
+  duration    Int      @default(30) // minutes
+  status      AppointmentStatus @default(CONFIRME)
+  motif       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  consultation Consultation?
+
+  @@index([organizationId])
+  @@index([organizationId, scheduledAt])
+  @@index([practitionerId, scheduledAt])
+}
+
+// ============================================================================
+// CAISSE, FACTURATION & TIERS-PAYANT (OHADA)
+// ============================================================================
+
+enum InvoiceStatus {
+  BROUILLON
+  EN_ATTENTE_PAIEMENT
+  PARTIELLEMENT_PAYEE
+  PAYEE
+  ANNULEE
+}
+
+model Invoice {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  numero String // numéro de facture séquentiel par organisation
+
+  status InvoiceStatus @default(BROUILLON)
+
+  montantTotal      Decimal @db.Decimal(14, 2)
+  montantPartPatient Decimal @db.Decimal(14, 2)
+  montantPartAssurance Decimal @default(0) @db.Decimal(14, 2)
+  montantPaye       Decimal @default(0) @db.Decimal(14, 2)
+
+  insuranceProviderId String?
+  insuranceProvider   InsuranceProvider? @relation(fields: [insuranceProviderId], references: [id])
+
+  createdById String
+  createdBy   User   @relation("InvoiceCreatedBy", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items          InvoiceItem[]
+  payments       Payment[]
+  insuranceClaim InsuranceClaim?
+  creditNotes    CreditNote[]
+
+  @@unique([organizationId, numero])
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([patientId])
+}
+
+model InvoiceItem {
+  id        String  @id @default(cuid())
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  consultationId String?
+  consultation   Consultation? @relation(fields: [consultationId], references: [id])
+
+  pole        String // Consultation, Labo, Pharmacie, Hospitalisation
+  libelle     String
+  quantite    Int     @default(1)
+  prixUnitaire Decimal @db.Decimal(14, 2)
+  montant     Decimal @db.Decimal(14, 2)
+
+  @@index([invoiceId])
+}
+
+enum PaymentMode {
+  ESPECES
+  MTN_MOMO
+  ORANGE_MONEY
+  WAVE
+  CARTE
+  VIREMENT
+}
+
+// Anti-fraude: chaque paiement passe par un CAISSIER qui l'enregistre, puis
+// nécessite la validation d'un second utilisateur habilité (ou le même
+// caissier ré-authentifié par PIN) avant que l'acte ne soit débloqué côté
+// médecin. Voir CashRegister.unlock via consultation.unlockedByPaymentId.
+model Payment {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id])
+
+  cashSessionId String
+  cashSession   CashSession @relation(fields: [cashSessionId], references: [id])
+
+  mode    PaymentMode
+  montant Decimal     @db.Decimal(14, 2)
+  reference String? // référence transaction Mobile Money / carte
+
+  cashierId String
+  cashier   User   @relation("PaymentCashier", fields: [cashierId], references: [id])
+
+  // Double validation aveugle : rempli uniquement après confirmation PIN
+  validatedById String?
+  validatedBy   User?     @relation("PaymentValidator", fields: [validatedById], references: [id])
+  validatedAt   DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([invoiceId])
+  @@index([cashSessionId])
+}
+
+model InsuranceProvider {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name          String
+  tauxPriseEnCharge Int // % par défaut (ex: 80)
+  plafondAnnuel Decimal? @db.Decimal(14, 2)
+  contact       String?
+
+  patients Patient[]
+  invoices Invoice[]
+  claims   InsuranceClaim[]
+
+  @@index([organizationId])
+}
+
+enum ClaimStatus {
+  EN_PREPARATION
+  TRANSMIS
+  ACCEPTE
+  REJETE
+  PAYE
+}
+
+// Bordereau de transmission à l'assurance
+model InsuranceClaim {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  invoiceId String  @unique
+  invoice   Invoice @relation(fields: [invoiceId], references: [id])
+
+  insuranceProviderId String
+  insuranceProvider   InsuranceProvider @relation(fields: [insuranceProviderId], references: [id])
+
+  montant Decimal     @db.Decimal(14, 2)
+  status  ClaimStatus @default(EN_PREPARATION)
+
+  numeroBordereau String?
+  transmisAt      DateTime?
+  reponduAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([organizationId, status])
+}
+
+// Caisse physique (ex: "Caisse Accueil", "Caisse Pharmacie")
+model CashRegister {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name     String
+  isActive Boolean @default(true)
+
+  sessions CashSession[]
+
+  @@index([organizationId])
+}
+
+enum CashSessionStatus {
+  OUVERTE
+  CLOTUREE
+}
+
+// Session de caisse: ouverture -> mouvements -> clôture avec vérification
+// PIN et journal immuable (AuditLog) pour tracer tout écart de caisse.
+model CashSession {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  cashRegisterId String
+  cashRegister   CashRegister @relation(fields: [cashRegisterId], references: [id])
+
+  cashierId String
+  cashier   User   @relation(fields: [cashierId], references: [id])
+
+  status CashSessionStatus @default(OUVERTE)
+
+  montantOuverture Decimal  @db.Decimal(14, 2)
+  montantClotureTheorique Decimal? @db.Decimal(14, 2) // calculé
+  montantClotureReel     Decimal? @db.Decimal(14, 2) // saisi par le caissier
+  ecart                  Decimal? @db.Decimal(14, 2)
+
+  pinVerifiedAt DateTime? // horodatage de la vérification PIN à la clôture
+
+  openedAt  DateTime  @default(now())
+  closedAt  DateTime?
+
+  payments Payment[]
+
+  @@index([organizationId])
+  @@index([cashierId])
+}
+
+// ============================================================================
+// PHARMACIE, DÉPÔTS ET STOCKS MULTI-SITES
+// ============================================================================
+
+enum StockItemCategory {
+  MEDICAMENT
+  CONSOMMABLE
+  DISPOSITIF_MEDICAL
+}
+
+model StockItem {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  code       String
+  nom        String
+  categorie  StockItemCategory
+  unite      String // boîte, flacon, comprimé...
+  prixAchat  Decimal @db.Decimal(14, 2)
+  prixVente  Decimal @db.Decimal(14, 2)
+  seuilReappro Int   @default(10)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lots               StockLot[]
+  movements          StockMovement[]
+  prescriptionItems  PrescriptionItem[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+}
+
+// Numéro de lot avec date de péremption — support du FEFO
+model StockLot {
+  id          String    @id @default(cuid())
+  stockItemId String
+  stockItem   StockItem @relation(fields: [stockItemId], references: [id], onDelete: Cascade)
+
+  numeroLot     String
+  quantite      Int
+  datePeremption DateTime
+  site          String // dépôt / site multi-sites
+
+  createdAt DateTime @default(now())
+
+  movements StockMovement[]
+
+  @@index([stockItemId])
+  @@index([stockItemId, datePeremption]) // requête FEFO: tri par péremption croissante
+}
+
+enum StockMovementType {
+  ENTREE
+  SORTIE_VENTE
+  SORTIE_DISPENSATION
+  AJUSTEMENT
+  PEREMPTION
+  TRANSFERT
+}
+
+model StockMovement {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  stockItemId String
+  stockItem   StockItem @relation(fields: [stockItemId], references: [id])
+
+  stockLotId String?
+  stockLot   StockLot? @relation(fields: [stockLotId], references: [id])
+
+  type      StockMovementType
+  quantite  Int // positif = entrée, négatif = sortie
+  motif     String?
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([stockItemId])
+}
+
+// ============================================================================
+// HOSPITALISATION, BLOC & SOINS INFIRMIERS
+// ============================================================================
+
+enum RoomType {
+  CHAMBRE_SIMPLE
+  CHAMBRE_DOUBLE
+  BLOC_OPERATOIRE
+  URGENCES
+  SOINS_INTENSIFS
+}
+
+model Room {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  numero String
+  type   RoomType
+
+  beds Bed[]
+
+  @@unique([organizationId, numero])
+  @@index([organizationId])
+}
+
+enum BedStatus {
+  LIBRE
+  OCCUPE
+  RESERVE
+  MAINTENANCE
+}
+
+model Bed {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  numero String
+  status BedStatus @default(LIBRE)
+
+  hospitalizations Hospitalization[]
+
+  @@unique([roomId, numero])
+  @@index([organizationId])
+  @@index([organizationId, status])
+}
+
+enum HospitalizationStatus {
+  EN_COURS
+  SORTIE
+  TRANSFERE
+}
+
+model Hospitalization {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  bedId String
+  bed   Bed    @relation(fields: [bedId], references: [id])
+
+  status      HospitalizationStatus @default(EN_COURS)
+  motifEntree String?
+  motifSortie String?
+
+  admittedAt   DateTime  @default(now())
+  dischargedAt DateTime?
+
+  nursingNotes NursingNote[]
+  incidents    Incident[]
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([bedId])
+}
+
+enum ShiftPeriod {
+  JOUR
+  NUIT
+}
+
+// Cahier de soins infirmiers — transmission d'équipe jour/nuit
+model NursingNote {
+  id                String          @id @default(cuid())
+  hospitalizationId String
+  hospitalization   Hospitalization @relation(fields: [hospitalizationId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  periode ShiftPeriod
+  note    String
+
+  createdAt DateTime @default(now())
+
+  @@index([hospitalizationId])
+}
+
+// ============================================================================
+// RH, GARDES ET PAIE
+// ============================================================================
+
+model Shift {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  startAt DateTime
+  endAt   DateTime
+  periode ShiftPeriod
+  isAstreinte Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([userId, startAt])
+}
+
+enum PayrollType {
+  SALAIRE_FIXE
+  RETROCESSION // % sur actes pour médecins vacataires
+}
+
+enum PayrollStatus {
+  BROUILLON
+  VALIDE
+  PAYE
+}
+
+model Payroll {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  periode String // "2026-08"
+  type    PayrollType
+
+  salaireBrut      Decimal  @default(0) @db.Decimal(14, 2)
+  cotisationsCnps  Decimal  @default(0) @db.Decimal(14, 2)
+  retrocessionTaux Int? // % sur actes, si RETROCESSION
+  retrocessionMontant Decimal @default(0) @db.Decimal(14, 2)
+  netAPayer        Decimal  @db.Decimal(14, 2)
+
+  status PayrollStatus @default(BROUILLON)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, userId, periode, type])
+  @@index([organizationId])
 }
 
 // ============================================================================
@@ -162,8 +909,8 @@ model User {
 // ============================================================================
 
 // Journal d'audit immuable — aucune mise à jour ni suppression prévue côté
-// application; utilisé pour la traçabilité (écritures comptables, actions
-// sensibles) et les exigences réglementaires.
+// application; utilisé pour la traçabilité anti-fraude (caisse, dispensation,
+// accès DPI) et les exigences réglementaires (RMA/SNIS).
 model AuditLog {
   id             String       @id @default(cuid())
   organizationId String
@@ -172,7 +919,7 @@ model AuditLog {
   userId String?
   user   User?  @relation(fields: [userId], references: [id])
 
-  action     String // ex: "JOURNAL_ENTRY_CREATED", "ASSISTANCE_SESSION_STARTED"
+  action     String // ex: "PAYMENT_VALIDATED", "CASH_SESSION_CLOSED", "PATIENT_RECORD_VIEWED"
   entityType String
   entityId   String
   metadata   Json?
@@ -186,399 +933,222 @@ model AuditLog {
 }
 
 // ============================================================================
-// COMPTABILITÉ GÉNÉRALE, ANALYTIQUE ET FISCALE (SYSCOHADA révisé)
+// ALERTES CONFIGURABLES (module Dashboards & Reporting)
 // ============================================================================
-// Plan comptable par organisation, journaux, écritures en partie double
-// (équilibre débit=crédit imposé par services/journal-entry.service.ts,
-// jamais laissé au client), tiers, centres de coûts (comptabilité
-// analytique), immobilisations, et copilote IA (OCR + chat) qui ne fait que
-// PROPOSER des écritures — jamais les poser lui-même directement en base,
-// pour garder un principe de double contrôle humain.
 
-enum AccountClass {
-  CLASSE1_RESSOURCES_DURABLES
-  CLASSE2_ACTIF_IMMOBILISE
-  CLASSE3_STOCKS
-  CLASSE4_TIERS
-  CLASSE5_TRESORERIE
-  CLASSE6_CHARGES
-  CLASSE7_PRODUITS
-  CLASSE8_AUTRES_CHARGES_PRODUITS
+// Métriques directement calculables par services/dashboard.service.ts et
+// services/pharmacie.service.ts — ajouter une métrique ici nécessite
+// d'ajouter son évaluation dans services/alert-rule.service.ts.
+enum AlertMetric {
+  CA_JOUR
+  CREANCES_ASSURANCES
+  TAUX_OCCUPATION_LITS
+  STOCK_JOURS_AVANT_PEREMPTION
+  STOCK_SOUS_SEUIL_REAPPRO
+  ECART_CAISSE_CLOTURE
 }
 
-// Plan comptable de l'organisation, numéroté selon le référentiel SYSCOHADA
-// révisé (ex: 601000 Achats de marchandises, 411000 Clients, 445200 TVA
-// facturée). Propre à chaque tenant pour permettre des comptes auxiliaires
-// personnalisés sans affecter les autres organisations.
-model Account {
+enum AlertOperator {
+  SUPERIEUR_A
+  INFERIEUR_A
+}
+
+// Seuils définis par le directeur lui-même (pas de seuil codé en dur) —
+// évalués périodiquement par un job (voir services/alert-rule.service.ts) et
+// journalisés dans AlertTriggerLog à chaque déclenchement.
+model AlertRule {
   id             String       @id @default(cuid())
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  numero  String // ex: "601100"
-  libelle String
-  classe  AccountClass
+  label     String
+  metric    AlertMetric
+  operator  AlertOperator
+  threshold Decimal @db.Decimal(14, 2)
+  isActive  Boolean @default(true)
 
-  // Compte collectif nécessitant obligatoirement un tiers sur chaque ligne
-  // d'écriture qui l'utilise (comptes 401x fournisseurs, 411x clients).
-  isAuxiliaire Boolean @default(false)
-  isActive     Boolean @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  journalItems        JournalItem[]
-  thirdParties        ThirdParty[]
-  assetsImmobilisation Asset[] @relation("AssetCompteImmobilisation")
-  assetsAmortissement  Asset[] @relation("AssetCompteAmortissement")
-
-  @@unique([organizationId, numero])
-  @@index([organizationId])
-  @@index([organizationId, classe])
-}
-
-enum JournalType {
-  ACHATS
-  VENTES
-  BANQUE
-  CAISSE
-  OPERATIONS_DIVERSES
-  A_NOUVEAUX
-}
-
-// Journal comptable (ex: code "AC" Achats, "VE" Ventes, "BQ1" Banque
-// principale) — chaque pièce comptable est rattachée à un journal, dont le
-// code préfixe la numérotation séquentielle de la pièce.
-model Journal {
-  id             String       @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  code     String // "AC", "VE", "BQ1", "CA1", "OD"
-  libelle  String
-  type     JournalType
-  isActive Boolean @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  entries        JournalEntry[]
-  bankStatements BankStatement[]
-
-  @@unique([organizationId, code])
-  @@index([organizationId])
-}
-
-enum JournalEntryStatus {
-  BROUILLON
-  VALIDEE
-}
-
-// Pièce comptable (écriture). Toujours créée avec ses lignes (JournalItem)
-// dans la même transaction, après vérification stricte de l'équilibre
-// débit=crédit côté service — voir services/journal-entry.service.ts. Une
-// fois VALIDEE, une écriture est immuable (aucune route de mise à jour /
-// suppression n'est exposée); une correction se fait par contre-passation.
-model JournalEntry {
-  id             String       @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  journalId String
-  journal   Journal @relation(fields: [journalId], references: [id])
-
-  numeroPiece  String // séquentiel par journal et par année, ex: "AC-2026-000123"
-  dateEcriture DateTime
-  libelle      String
-  reference    String? // n° facture / bon de commande / pièce source
-  status       JournalEntryStatus @default(BROUILLON)
-
-  thirdPartyId String?
-  thirdParty   ThirdParty? @relation(fields: [thirdPartyId], references: [id])
-
-  // Document scanné à l'origine de l'écriture, si générée depuis le copilote
-  // OCR (voir ScannedDocument) — optionnel, une écriture peut être saisie
-  // manuellement sans document source.
-  scannedDocumentId String?          @unique
-  scannedDocument   ScannedDocument? @relation(fields: [scannedDocumentId], references: [id])
+  notifyRoles Role[] // rôles destinataires de la notification in-app
 
   createdById String
-  createdBy   User   @relation("JournalEntryCreatedBy", fields: [createdById], references: [id])
-
-  validatedById String?
-  validatedBy   User?     @relation("JournalEntryValidatedBy", fields: [validatedById], references: [id])
-  validatedAt   DateTime?
+  createdBy   User   @relation(fields: [createdById], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  items JournalItem[]
+  triggerLogs AlertTriggerLog[]
 
-  @@unique([organizationId, journalId, numeroPiece])
   @@index([organizationId])
-  @@index([organizationId, dateEcriture])
-  @@index([journalId])
+  @@index([organizationId, isActive])
 }
 
-// Ligne de l'écriture: chaque ligne est renseignée soit au débit soit au
-// crédit (jamais les deux), l'égalité de la somme des deux colonnes sur
-// l'ensemble des lignes d'une pièce étant la seule condition de validité en
-// partie double — imposée par services/journal-entry.service.ts avant tout
-// prisma.journalEntry.create. costCenterId est l'axe de ventilation
-// analytique optionnel (comptabilité analytique).
-model JournalItem {
-  id             String       @id @default(cuid())
-  journalEntryId String
-  journalEntry   JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+// Historique des déclenchements — permet au directeur de voir la fréquence
+// et l'évolution d'une alerte dans le temps, pas seulement son état actuel.
+model AlertTriggerLog {
+  id          String    @id @default(cuid())
+  alertRuleId String
+  alertRule   AlertRule @relation(fields: [alertRuleId], references: [id], onDelete: Cascade)
 
-  accountId String
-  account   Account @relation(fields: [accountId], references: [id])
+  value       Decimal  @db.Decimal(14, 2)
+  triggeredAt DateTime @default(now())
 
-  thirdPartyId String?
-  thirdParty   ThirdParty? @relation(fields: [thirdPartyId], references: [id])
-
-  costCenterId String?
-  costCenter   CostCenter? @relation(fields: [costCenterId], references: [id])
-
-  libelle String
-  debit   Decimal @default(0) @db.Decimal(14, 2)
-  credit  Decimal @default(0) @db.Decimal(14, 2)
-
-  createdAt DateTime @default(now())
-
-  bankStatementLine BankStatementLine?
-
-  @@index([journalEntryId])
-  @@index([accountId])
-  @@index([costCenterId])
+  @@index([alertRuleId])
+  @@index([alertRuleId, triggeredAt])
 }
 
-// Centre de coût / axe analytique (ex: "Commercial", "Production",
-// "Chantier Douala") — permet de ventiler une charge ou un produit
-// indépendamment de son compte général, pour la comptabilité analytique.
-model CostCenter {
-  id             String       @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+// ============================================================================
+// AVOIRS (module Caisse & Facturation)
+// ============================================================================
 
-  code     String
-  libelle  String
-  isActive Boolean @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  journalItems JournalItem[]
-
-  @@unique([organizationId, code])
-  @@index([organizationId])
-}
-
-enum ThirdPartyType {
-  CLIENT
-  FOURNISSEUR
+enum CreditNoteReason {
+  ERREUR_FACTURATION
+  RETOUR_PRODUIT
+  GESTE_COMMERCIAL
   AUTRE
 }
 
-// Tiers (client ou fournisseur), rattaché à un compte collectif (411xxx ou
-// 401xxx) pour la ventilation par tiers du grand livre auxiliaire.
-model ThirdParty {
+// Réduit la part patient restant due sur une facture (jamais la part
+// assurance, qui suit son propre cycle de bordereau). Ne génère pas de
+// remboursement en espèces automatique — un avoir sur une facture déjà
+// soldée signale un solde en faveur du patient à régulariser manuellement.
+model CreditNote {
   id             String       @id @default(cuid())
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  code          String // matricule interne, ex: "CL0001"
-  raisonSociale String
-  type          ThirdPartyType
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id])
 
-  accountId String?
-  account   Account? @relation(fields: [accountId], references: [id])
+  montant Decimal          @db.Decimal(14, 2)
+  motif   CreditNoteReason
+  note    String?
 
-  ninea     String? // identifiant fiscal / contribuable
-  telephone String?
-  email     String?
-  adresse   String?
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id])
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
-  journalEntries JournalEntry[]
-  journalItems   JournalItem[]
+  @@index([organizationId])
+  @@index([invoiceId])
+}
 
-  @@unique([organizationId, code])
+// ============================================================================
+// INCIDENTS QUALITÉ (module Hospitalisation)
+// ============================================================================
+
+enum IncidentType {
+  CHUTE
+  ESCARRE
+  ERREUR_MEDICAMENTEUSE
+  INFECTION_NOSOCOMIALE
+  AUTRE
+}
+
+enum IncidentSeverity {
+  MINEUR
+  MODERE
+  MAJEUR
+  CRITIQUE
+}
+
+model Incident {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  hospitalizationId String?
+  hospitalization   Hospitalization? @relation(fields: [hospitalizationId], references: [id])
+
+  type               IncidentType
+  severite           IncidentSeverity
+  description        String
+  actionsCorrectives String?
+
+  declaredById String
+  declaredBy   User   @relation(fields: [declaredById], references: [id])
+
+  createdAt DateTime @default(now())
+
   @@index([organizationId])
   @@index([organizationId, type])
 }
 
-enum AssetDepreciationMethod {
-  LINEAIRE
-  DEGRESSIF
+// ============================================================================
+// CONGÉS (module RH)
+// ============================================================================
+
+enum LeaveType {
+  CONGE_PAYE
+  CONGE_MALADIE
+  CONGE_MATERNITE
+  CONGE_SANS_SOLDE
+  AUTRE
 }
 
-enum AssetStatus {
-  EN_SERVICE
-  CEDE
-  REFORME
-}
-
-// Immobilisation, avec ses comptes de rattachement (classe 2 pour la valeur
-// d'acquisition, compte d'amortissement associé) — le calcul de la dotation
-// périodique est effectué côté service, pas stocké en base au-delà du cumul
-// courant (cumulAmortissement), pour rester simple à corriger en cas d'erreur.
-model Asset {
-  id             String       @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  libelle              String
-  numeroImmobilisation String
-
-  compteImmobilisationId String
-  compteImmobilisation   Account @relation("AssetCompteImmobilisation", fields: [compteImmobilisationId], references: [id])
-
-  compteAmortissementId String?
-  compteAmortissement   Account? @relation("AssetCompteAmortissement", fields: [compteAmortissementId], references: [id])
-
-  valeurAcquisition      Decimal                 @db.Decimal(14, 2)
-  valeurResiduelle       Decimal                 @default(0) @db.Decimal(14, 2)
-  dateAcquisition        DateTime
-  dureeAmortissementMois Int
-  methodeAmortissement   AssetDepreciationMethod @default(LINEAIRE)
-  cumulAmortissement     Decimal                 @default(0) @db.Decimal(14, 2)
-  status                 AssetStatus             @default(EN_SERVICE)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([organizationId, numeroImmobilisation])
-  @@index([organizationId])
-}
-
-enum ScannedDocumentStatus {
+enum LeaveStatus {
   EN_ATTENTE
-  TRAITE
-  ECHEC
-  IGNORE
+  APPROUVE
+  REJETE
+  ANNULE
 }
 
-// Document scanné (facture, reçu) soumis au copilote OCR. extractedData
-// stocke la réponse brute (validée) de l'IA: montants, tiers détecté, lignes
-// d'écriture proposées — jamais posées automatiquement, voir JournalEntry.
-model ScannedDocument {
-  id             String       @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  fileUrl  String
-  fileName String
-  mimeType String
-
-  status               ScannedDocumentStatus @default(EN_ATTENTE)
-  extractedData        Json?
-  suggestedJournalType JournalType?
-
-  uploadedById String
-  uploadedBy   User   @relation(fields: [uploadedById], references: [id])
-
-  journalEntry JournalEntry?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([organizationId])
-  @@index([organizationId, status])
-}
-
-enum AiMessageRole {
-  USER
-  ASSISTANT
-}
-
-// Fil de discussion avec l'assistant CFO (voir components/ai/CfoAssistantChat.tsx).
-model AiConversation {
+model LeaveRequest {
   id             String       @id @default(cuid())
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   userId String
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation("LeaveRequester", fields: [userId], references: [id])
 
-  titre String?
+  type      LeaveType
+  dateDebut DateTime
+  dateFin   DateTime
+  motif     String?
+  status    LeaveStatus @default(EN_ATTENTE)
+
+  approvedById String?
+  approvedBy   User?     @relation("LeaveApprover", fields: [approvedById], references: [id])
+  approvedAt   DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  messages AiMessage[]
 
   @@index([organizationId])
   @@index([userId])
 }
 
-model AiMessage {
-  id             String         @id @default(cuid())
-  conversationId String
-  conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+// ============================================================================
+// SATISFACTION PATIENT (module Qualité & sécurité des soins)
+// ============================================================================
 
-  role    AiMessageRole
-  contenu String
-
-  // Métadonnées de la réponse IA (ex: sources citées, latence) — jamais de
-  // donnée nécessaire au rendu du fil, purement diagnostique.
-  metadata Json?
-
-  createdAt DateTime @default(now())
-
-  @@index([conversationId])
-}
-
-enum BankStatementStatus {
-  IMPORTE
-  RAPPROCHE
-}
-
-// Relevé bancaire importé pour rapprochement avec les écritures du journal
-// banque correspondant.
-model BankStatement {
+// Score de type NPS (0-10) — pas de diagnostic clinique, un simple retour
+// d'expérience rattaché à une consultation si disponible.
+model PatientSatisfaction {
   id             String       @id @default(cuid())
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  journalId String
-  journal   Journal @relation(fields: [journalId], references: [id])
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
 
-  libelle      String
-  dateDebut    DateTime
-  dateFin      DateTime
-  soldeInitial Decimal             @db.Decimal(14, 2)
-  soldeFinal   Decimal             @db.Decimal(14, 2)
-  status       BankStatementStatus @default(IMPORTE)
-  fileUrl      String?
+  consultationId String?
+  consultation   Consultation? @relation(fields: [consultationId], references: [id])
+
+  score       Int // 0 à 10
+  commentaire String?
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  lines BankStatementLine[]
 
   @@index([organizationId])
+  @@index([organizationId, createdAt])
 }
 
-// Ligne de relevé, rapprochée à une ligne d'écriture (JournalItem) du
-// journal banque une fois pointée — isRapproche reste false tant qu'aucune
-// correspondance n'a été établie côté utilisateur.
-model BankStatementLine {
-  id              String        @id @default(cuid())
-  bankStatementId String
-  bankStatement   BankStatement @relation(fields: [bankStatementId], references: [id], onDelete: Cascade)
+// ============================================================================
+// GROUPE MULTI-ÉTABLISSEMENTS
+// ============================================================================
 
-  dateOperation DateTime
-  libelle       String
-  montant       Decimal @db.Decimal(14, 2) // signé: positif = crédit banque, négatif = débit banque
-  isRapproche   Boolean @default(false)
-
-  journalItemId String?      @unique
-  journalItem   JournalItem? @relation(fields: [journalItemId], references: [id])
-
-  createdAt DateTime @default(now())
-
-  @@index([bankStatementId])
+model OrganizationGroup {
+  id            String         @id @default(cuid())
+  name          String
+  createdAt     DateTime       @default(now())
+  organizations Organization[]
 }

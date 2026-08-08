@@ -4,7 +4,7 @@ import { ForbiddenError } from "@/lib/rbac";
 import { handleApiError } from "@/lib/api-error";
 import { writeAuditLog, ipFromRequest } from "@/lib/audit";
 
-const ASSIST_RETURN_COOKIE = "axecompta_assist_return";
+const ASSIST_RETURN_COOKIE = "axehealth_assist_return";
 
 // Quitte une session d'assistance et restaure la session super-admin
 // d'origine, stashée dans ASSIST_RETURN_COOKIE au moment de POST
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       // Le cookie de retour a expiré ou a été supprimé — on ne peut pas
       // restaurer la session super-admin, il faudra se reconnecter.
       const response = NextResponse.json({ error: "ASSISTANCE_RETURN_EXPIRED" }, { status: 401 });
-      response.cookies.delete("axecompta_token");
+      response.cookies.delete("axehealth_token");
       response.cookies.delete(ASSIST_RETURN_COOKIE);
       return response;
     }
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
       verifyAccessToken(returnToken);
     } catch {
       const response = NextResponse.json({ error: "ASSISTANCE_RETURN_EXPIRED" }, { status: 401 });
-      response.cookies.delete("axecompta_token");
+      response.cookies.delete("axehealth_token");
       response.cookies.delete(ASSIST_RETURN_COOKIE);
       return response;
     }
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     });
 
     const response = NextResponse.json({ ok: true });
-    response.cookies.set("axecompta_token", returnToken, {
+    response.cookies.set("axehealth_token", returnToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",

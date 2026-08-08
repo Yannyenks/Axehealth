@@ -1,6 +1,6 @@
 {
   "Common": {
-    "brand": "AxeCompta",
+    "brand": "AxeHealth",
     "loading": "Loading…"
   },
   "Landing": {
@@ -8,37 +8,28 @@
       "features": "Features",
       "pricing": "Pricing",
       "login": "Log in",
-      "cta": "Create my space"
+      "cta": "Create my clinic"
     },
     "hero": {
-      "eyebrow": "Next-generation SYSCOHADA accounting",
-      "title": "Your bookkeeping, run by an AI copilot that understands your business.",
-      "subtitle": "AxeCompta checks that every entry balances, scans your invoices with AI, and gives you a personalized financial diagnosis the moment you sign up — as if you had a dedicated accountant on staff.",
-      "ctaPrimary": "Create my accounting space",
+      "eyebrow": "SaaS platform for clinics and health centers",
+      "title": "Run your healthcare facility. Simply. With confidence.",
+      "subtitle": "AxeHealth brings patient records, fraud-proof cash handling, pharmacy, inpatient care, HR and billing together in one space, tailored to your facility.",
+      "ctaPrimary": "Create my facility",
       "ctaSecondary": "Log in",
-      "ctaHint": "No credit card required — AI audit included at signup"
-    },
-    "howItWorks": {
-      "title": "Three steps to a clear financial picture",
-      "subtitle": "From signup to a personalized dashboard, in a few minutes.",
-      "steps": {
-        "step1": { "title": "Create your space", "description": "Set up your company in under two minutes, no commitment." },
-        "step2": { "title": "Answer the AI audit", "description": "A few simple questions, like an interview with an accountant getting to know your business." },
-        "step3": { "title": "Steer from your dashboard", "description": "Personalized priorities, a ready-to-use chart of accounts, and a copilot always on hand." }
-      }
+      "ctaHint": "No credit card required to get started"
     },
     "features": {
-      "title": "Everything your business needs for reliable bookkeeping",
+      "title": "Everything your clinic needs, in one place",
       "subtitle": "Every team member only sees the modules relevant to them.",
       "items": {
-        "ecritures": { "title": "Always-balanced entries", "description": "Every journal entry is blocked unless debit and credit balance to the last cent." },
-        "auditIa": { "title": "AI financial diagnosis", "description": "A conversational audit at signup for a dashboard personalized from day one." },
-        "ocr": { "title": "Smart invoice scanner", "description": "Photograph a receipt or invoice — the AI proposes the matching SYSCOHADA journal entry." },
-        "copilote": { "title": "CFO copilot, available 24/7", "description": "Ask accounting or tax questions anytime, from any screen." },
-        "planComptable": { "title": "Tailored chart of accounts", "description": "Accounts, journals, third parties and cost centers matched to your actual activity." },
-        "audit": { "title": "Immutable audit log", "description": "Every posted entry is logged and can never be edited afterwards." },
-        "multiEntreprise": { "title": "Multi-company & roles", "description": "An isolated, tailored space per company, with precise role-based access." },
-        "offline": { "title": "Offline mode", "description": "Data entry keeps working during network outages, then syncs automatically." }
+        "patients": { "title": "Patient records (EHR)", "description": "Medical history, allergies and encounters, centralized and encrypted." },
+        "caisse": { "title": "Fraud-proof cash register", "description": "Mandatory dual validation on every payment collected." },
+        "pharmacie": { "title": "Pharmacy & stock", "description": "FEFO batch management, expiry and shortage alerts." },
+        "hospitalisation": { "title": "Real-time inpatient care", "description": "Bed map, admissions, transfers and nursing notes." },
+        "rh": { "title": "HR & scheduling", "description": "Shifts, leave requests and payroll for care staff." },
+        "audit": { "title": "Immutable audit log", "description": "Full traceability of every sensitive action." },
+        "offline": { "title": "Offline mode", "description": "Data entry keeps working even during network outages." },
+        "multiEtablissement": { "title": "Multi-facility & roles", "description": "An isolated, tailored space for every facility." }
       }
     },
     "pricing": {
@@ -47,26 +38,26 @@
       "cta": "Start with {plan}"
     },
     "footer": {
-      "tagline": "AI-augmented general, analytical and tax accounting SaaS (SYSCOHADA).",
+      "tagline": "Integrated management ERP for clinics and health centers.",
       "rights": "All rights reserved."
     }
   },
   "Plans": {
-    "STARTER": { "name": "Starter", "tagline": "To get started with a small team", "highlights": ["Up to 5 accounts", "Bookkeeping, third parties and AI copilot", "Email support"] },
-    "PRO": { "name": "Pro", "tagline": "For a growing business", "highlights": ["Up to 20 accounts", "Fixed assets & bank reconciliation", "Priority support"] },
-    "ENTERPRISE": { "name": "Enterprise", "tagline": "For a multi-entity group", "highlights": ["Unlimited accounts", "Multi-company consolidation", "Dedicated support"] },
+    "STARTER": { "name": "Starter", "tagline": "To get started with a small team", "highlights": ["Up to 5 accounts", "All clinical modules", "Email support"] },
+    "PRO": { "name": "Pro", "tagline": "For a growing clinic", "highlights": ["Up to 20 accounts", "Cross-clinic comparison", "Priority support"] },
+    "ENTERPRISE": { "name": "Enterprise", "tagline": "For a network of facilities", "highlights": ["Unlimited accounts", "Clinic network (group)", "Dedicated support"] },
     "maxUsers": "{count} accounts",
     "maxUsersUnlimited": "Unlimited accounts"
   },
   "Auth": {
     "login": {
       "title": "Log in to your space",
-      "subtitle": "Access your company's dashboard",
+      "subtitle": "Access your facility's dashboard",
       "email": "Email",
       "password": "Password",
       "submit": "Log in",
       "submitting": "Logging in…",
-      "noAccount": "New company?",
+      "noAccount": "New clinic?",
       "createSpace": "Create a space",
       "invalidCredentials": "Invalid credentials",
       "locked": "Account temporarily locked",
@@ -78,9 +69,9 @@
       "mfaInvalid": "Invalid or expired code"
     },
     "signup": {
-      "title": "Create your company's space",
-      "subtitle": "Your space will be ready in a few minutes, AI diagnosis included",
-      "organizationName": "Your company name",
+      "title": "Create your facility's space",
+      "subtitle": "Your facility will be ready in a few minutes",
+      "organizationName": "Clinic / health center name",
       "city": "City",
       "country": "Country",
       "firstName": "First name",
@@ -103,8 +94,8 @@
     "back": "Back",
     "branding": {
       "title": "Customize your space",
-      "subtitle": "Give your dashboard your company's identity.",
-      "logoLabel": "Company logo (optional)",
+      "subtitle": "Give your dashboard your facility's identity.",
+      "logoLabel": "Facility logo (optional)",
       "logoHint": "PNG, JPEG, WEBP or SVG, 2 MB maximum",
       "logoUploading": "Uploading logo…",
       "colorLabel": "Brand color",
@@ -127,7 +118,7 @@
     },
     "welcome": {
       "title": "Welcome, {name}",
-      "subtitle": "Your space is ready. Here's a summary of your company.",
+      "subtitle": "Your space is ready. Here's a summary of your facility.",
       "planLabel": "Plan",
       "membersLabel": "Team members",
       "cta": "Go to my dashboard"

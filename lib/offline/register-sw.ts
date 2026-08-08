@@ -1,6 +1,6 @@
 import { flushQueue } from "./sync-queue";
 
-const SYNC_TAG = "axecompta-sync-mutations";
+const SYNC_TAG = "axehealth-sync-mutations";
 
 // À appeler une seule fois côté client (voir app/offline-provider.tsx).
 // Enregistre le service worker et branche deux déclencheurs de rejeu de la

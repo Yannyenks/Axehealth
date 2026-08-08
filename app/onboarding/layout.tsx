@@ -48,7 +48,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
     <div className="min-h-screen bg-muted/40">
       <AssistanceBanner />
       <header className="flex items-center justify-between border-b bg-card px-6 py-4">
-        <span className="font-display text-xl font-bold text-primary">AxeCompta</span>
+        <span className="font-display text-xl font-bold text-primary">AxeHealth</span>
         <LocaleSwitcher />
       </header>
       <main className="mx-auto max-w-2xl px-4 py-10">{children}</main>

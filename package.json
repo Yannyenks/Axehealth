@@ -1,8 +1,8 @@
 {
-  "name": "axecompta",
+  "name": "axehealth",
   "version": "1.0.0",
   "private": true,
-  "description": "AxeCompta — SaaS de comptabilité générale, analytique et fiscale (SYSCOHADA) pour PME et cabinets comptables en Afrique",
+  "description": "AxeHealth — ERP de gestion intégrée pour cliniques et centres de santé en Afrique",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -17,7 +17,6 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.21.0",
     "@prisma/client": "^5.18.0",
     "@radix-ui/react-dialog": "^1.1.1",
     "@radix-ui/react-dropdown-menu": "^2.1.1",

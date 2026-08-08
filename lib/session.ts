@@ -26,7 +26,7 @@ export async function issueSession(user: User): Promise<NextResponse> {
     accessToken,
   });
 
-  response.cookies.set("axecompta_token", accessToken, {
+  response.cookies.set("axehealth_token", accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

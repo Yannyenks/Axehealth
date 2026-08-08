@@ -7,10 +7,10 @@ import type { CreateTeamMemberInput, UpdateTeamMemberInput } from "@/lib/validat
 
 const TEMP_PASSWORD_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
 
-// Jamais passwordHash, totpSecret, totpBackupCodes ou refreshToken au-delà
-// du service — ce sont des secrets, pas des champs d'affichage, et cette
-// liste est le seul rempart entre un `prisma.user.xxx()` et une réponse API
-// qui les exposerait par accident.
+// Jamais passwordHash, pinHash, totpSecret, totpBackupCodes ou refreshToken
+// au-delà du service — ce sont des secrets, pas des champs d'affichage, et
+// cette liste est le seul rempart entre un `prisma.user.xxx()` et une
+// réponse API qui les exposerait par accident.
 const SAFE_USER_SELECT = {
   id: true,
   email: true,
@@ -18,6 +18,7 @@ const SAFE_USER_SELECT = {
   lastName: true,
   phone: true,
   role: true,
+  departmentId: true,
   isActive: true,
   lastLoginAt: true,
   totpEnabled: true,
@@ -45,6 +46,7 @@ export async function listTeamMembers(organizationId: string) {
       isActive: true,
       lastLoginAt: true,
       totpEnabled: true,
+      department: { select: { id: true, name: true } },
     },
     orderBy: [{ isActive: "desc" }, { lastName: "asc" }],
   });
@@ -69,6 +71,7 @@ export async function createTeamMember(organizationId: string, input: CreateTeam
       lastName: input.lastName,
       role: input.role,
       phone: input.phone,
+      departmentId: input.departmentId,
       passwordHash,
     },
     select: SAFE_USER_SELECT,
@@ -105,7 +108,7 @@ export async function updateTeamMember(organizationId: string, userId: string, a
 
   return prisma.user.update({
     where: { id: userId },
-    data: { role: input.role, isActive: input.isActive },
+    data: { role: input.role, isActive: input.isActive, departmentId: input.departmentId },
     select: SAFE_USER_SELECT,
   });
 }

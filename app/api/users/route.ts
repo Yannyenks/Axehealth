@@ -7,7 +7,7 @@ import { handleApiError } from "@/lib/api-error";
 export async function GET(req: NextRequest) {
   try {
     const session = requireAuth(req);
-    requireRole(session, PERMISSIONS.equipe.read);
+    requireRole(session, PERMISSIONS.rh.read);
 
     const { searchParams } = new URL(req.url);
     const role = searchParams.get("role") ?? undefined;

@@ -33,6 +33,16 @@ export async function verifyPassword(hash: string, plain: string): Promise<boole
   return argon2.verify(hash, plain);
 }
 
+// Utilisé pour le PIN de caisse (double validation anti-fraude à la clôture
+// et au déblocage d'un acte payant).
+export async function hashPin(pin: string): Promise<string> {
+  return argon2.hash(pin, { type: argon2.argon2id });
+}
+
+export async function verifyPin(hash: string, pin: string): Promise<boolean> {
+  return argon2.verify(hash, pin);
+}
+
 export function signAccessToken(payload: AccessTokenPayload): string {
   return jwt.sign(payload, getSecret("JWT_SECRET"), { expiresIn: ACCESS_TOKEN_TTL });
 }
@@ -72,7 +82,7 @@ export function getBearerToken(req: Request): string | null {
   // reste utile pour un usage API-to-API direct (Postman, intégrations).
   const cookieHeader = req.headers.get("cookie");
   if (!cookieHeader) return null;
-  const match = cookieHeader.match(/(?:^|;\s*)axecompta_token=([^;]+)/);
+  const match = cookieHeader.match(/(?:^|;\s*)axehealth_token=([^;]+)/);
   return match ? decodeURIComponent(match[1]) : null;
 }
 

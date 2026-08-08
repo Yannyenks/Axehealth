@@ -1,5 +1,5 @@
 export type Theme = "light" | "dark";
-const STORAGE_KEY = "axecompta-theme";
+const STORAGE_KEY = "axehealth-theme";
 
 export function getStoredTheme(): Theme {
   if (typeof window === "undefined") return "light";

@@ -6,7 +6,7 @@ import { handleApiError, NotFoundError } from "@/lib/api-error";
 import { writeAuditLog, ipFromRequest } from "@/lib/audit";
 import { getOrCreateSupportUser } from "@/services/superadmin.service";
 
-const ASSIST_RETURN_COOKIE = "axecompta_assist_return";
+const ASSIST_RETURN_COOKIE = "axehealth_assist_return";
 
 // Démarre une session d'assistance: le super-admin obtient un accès complet
 // (comme un ADMIN de l'établissement ciblé) via un compte support réel de
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     const cookieOptions = { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax" as const, maxAge: 15 * 60, path: "/" };
     response.cookies.set(ASSIST_RETURN_COOKIE, originalToken, cookieOptions);
-    response.cookies.set("axecompta_token", assistanceToken, cookieOptions);
+    response.cookies.set("axehealth_token", assistanceToken, cookieOptions);
 
     return response;
   } catch (error) {

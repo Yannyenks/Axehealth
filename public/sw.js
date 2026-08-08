@@ -1,4 +1,4 @@
-// Service worker AxeCompta — Background Sync pour la file de mutations
+// Service worker AxeHealth — Background Sync pour la file de mutations
 // hors-ligne. Écrit en JS natif (pas de bundler ici) et opère directement
 // sur la même base IndexedDB que lib/offline/db.ts (nom/version alignés).
 //
@@ -6,10 +6,10 @@
 // (App Shell) via Workbox/next-pwa — à ajouter séparément si un usage
 // hors-ligne "lecture" complet (pas seulement écriture en file) est requis.
 
-const DB_NAME = "axecompta-offline";
+const DB_NAME = "axehealth-offline";
 const DB_VERSION = 1;
 const MUTATION_STORE = "mutation-queue";
-const SYNC_TAG = "axecompta-sync-mutations";
+const SYNC_TAG = "axehealth-sync-mutations";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();

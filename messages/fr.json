@@ -1,6 +1,6 @@
 {
   "Common": {
-    "brand": "AxeCompta",
+    "brand": "AxeHealth",
     "loading": "Chargement…"
   },
   "Landing": {
@@ -8,37 +8,28 @@
       "features": "Fonctionnalités",
       "pricing": "Tarifs",
       "login": "Connexion",
-      "cta": "Créer mon espace"
+      "cta": "Créer mon établissement"
     },
     "hero": {
-      "eyebrow": "Comptabilité SYSCOHADA nouvelle génération",
-      "title": "Votre comptabilité, pilotée par un copilote IA qui comprend votre business.",
-      "subtitle": "AxeCompta vérifie l'équilibre de chaque écriture, scanne vos factures avec l'IA et vous offre, dès l'inscription, un diagnostic financier personnalisé — comme si vous aviez un expert-comptable dédié à temps plein.",
-      "ctaPrimary": "Créer mon espace comptable",
+      "eyebrow": "Plateforme SaaS pour cliniques et centres de santé",
+      "title": "Gérez votre établissement de santé. Simplement. En toute confiance.",
+      "subtitle": "AxeHealth réunit dossiers patients, caisse anti-fraude, pharmacie, hospitalisation, RH et facturation dans un seul espace, personnalisé pour votre établissement.",
+      "ctaPrimary": "Créer mon établissement",
       "ctaSecondary": "Se connecter",
-      "ctaHint": "Aucune carte bancaire requise — audit IA offert à l'inscription"
-    },
-    "howItWorks": {
-      "title": "Trois étapes pour un pilotage financier clair",
-      "subtitle": "De l'inscription à un tableau de bord personnalisé, en quelques minutes.",
-      "steps": {
-        "step1": { "title": "Créez votre espace", "description": "Renseignez votre entreprise en moins de deux minutes, sans engagement." },
-        "step2": { "title": "Répondez à l'audit IA", "description": "Quelques questions simples, comme un entretien avec un expert-comptable qui découvre votre activité." },
-        "step3": { "title": "Pilotez depuis votre tableau de bord", "description": "Des priorités personnalisées, un plan comptable prêt à l'emploi et un copilote disponible en permanence." }
-      }
+      "ctaHint": "Aucune carte bancaire requise pour démarrer"
     },
     "features": {
-      "title": "Tout ce dont votre entreprise a besoin pour une comptabilité fiable",
+      "title": "Tout ce dont votre clinique a besoin, dans un seul espace",
       "subtitle": "Chaque membre de votre équipe accède uniquement aux modules qui le concernent.",
       "items": {
-        "ecritures": { "title": "Écritures toujours équilibrées", "description": "Chaque pièce comptable est bloquée si le débit et le crédit ne s'équilibrent pas au centime près." },
-        "auditIa": { "title": "Diagnostic financier par l'IA", "description": "Un audit conversationnel à l'inscription pour un tableau de bord personnalisé dès le premier jour." },
-        "ocr": { "title": "Scanner de factures intelligent", "description": "Photographiez un reçu ou une facture, l'IA propose l'écriture comptable SYSCOHADA correspondante." },
-        "copilote": { "title": "Copilote CFO disponible 24/7", "description": "Posez vos questions comptables ou fiscales à tout moment, depuis n'importe quel écran." },
-        "planComptable": { "title": "Plan comptable sur mesure", "description": "Comptes, journaux, tiers et centres de coûts adaptés à la réalité de votre activité." },
-        "audit": { "title": "Journal d'audit immuable", "description": "Chaque écriture validée est journalisée et ne peut plus être modifiée après coup." },
-        "multiEntreprise": { "title": "Multi-entreprise & rôles", "description": "Un espace isolé et personnalisé par entreprise, avec des droits précis par rôle." },
-        "offline": { "title": "Mode hors-ligne", "description": "Vos saisies continuent même en cas de coupure réseau, puis se synchronisent automatiquement." }
+        "patients": { "title": "Dossiers patients (DPI)", "description": "Antécédents, allergies et historique centralisés et chiffrés." },
+        "caisse": { "title": "Caisse anti-fraude", "description": "Double validation obligatoire sur chaque paiement encaissé." },
+        "pharmacie": { "title": "Pharmacie & stocks", "description": "Gestion des lots en FEFO, alertes de péremption et de rupture." },
+        "hospitalisation": { "title": "Hospitalisation temps réel", "description": "Plan des lits, admissions, transferts et cahier de soins." },
+        "rh": { "title": "RH & plannings", "description": "Gardes, congés et paie du personnel soignant." },
+        "audit": { "title": "Journal d'audit immuable", "description": "Traçabilité complète de toutes les actions sensibles." },
+        "offline": { "title": "Mode hors-ligne", "description": "Les saisies continuent même en cas de coupure réseau." },
+        "multiEtablissement": { "title": "Multi-établissement & rôles", "description": "Un espace isolé et personnalisé par établissement." }
       }
     },
     "pricing": {
@@ -47,26 +38,26 @@
       "cta": "Démarrer avec {plan}"
     },
     "footer": {
-      "tagline": "SaaS de comptabilité générale, analytique et fiscale (SYSCOHADA) augmenté par l'IA.",
+      "tagline": "ERP de gestion intégrée pour cliniques et centres de santé.",
       "rights": "Tous droits réservés."
     }
   },
   "Plans": {
-    "STARTER": { "name": "Starter", "tagline": "Pour démarrer avec une petite équipe", "highlights": ["Jusqu'à 5 comptes", "Comptabilité, tiers et copilote IA", "Support par email"] },
-    "PRO": { "name": "Pro", "tagline": "Pour une entreprise en croissance", "highlights": ["Jusqu'à 20 comptes", "Immobilisations & rapprochement bancaire", "Support prioritaire"] },
-    "ENTERPRISE": { "name": "Enterprise", "tagline": "Pour un groupe multi-entités", "highlights": ["Comptes illimités", "Consolidation multi-entreprises", "Accompagnement dédié"] },
+    "STARTER": { "name": "Starter", "tagline": "Pour démarrer avec une petite équipe", "highlights": ["Jusqu'à 5 comptes", "Tous les modules cliniques", "Support par email"] },
+    "PRO": { "name": "Pro", "tagline": "Pour une clinique en croissance", "highlights": ["Jusqu'à 20 comptes", "Comparatif inter-cliniques", "Support prioritaire"] },
+    "ENTERPRISE": { "name": "Enterprise", "tagline": "Pour un réseau d'établissements", "highlights": ["Comptes illimités", "Réseau de cliniques (groupe)", "Accompagnement dédié"] },
     "maxUsers": "{count} comptes",
     "maxUsersUnlimited": "Comptes illimités"
   },
   "Auth": {
     "login": {
       "title": "Connexion à votre espace",
-      "subtitle": "Accédez au tableau de bord de votre entreprise",
+      "subtitle": "Accédez au tableau de bord de votre établissement",
       "email": "Email",
       "password": "Mot de passe",
       "submit": "Se connecter",
       "submitting": "Connexion…",
-      "noAccount": "Nouvelle entreprise ?",
+      "noAccount": "Nouvelle clinique ?",
       "createSpace": "Créer un espace",
       "invalidCredentials": "Identifiants invalides",
       "locked": "Compte temporairement verrouillé",
@@ -78,9 +69,9 @@
       "mfaInvalid": "Code invalide ou expiré"
     },
     "signup": {
-      "title": "Créer l'espace de votre entreprise",
-      "subtitle": "Votre espace sera prêt en quelques minutes, diagnostic IA inclus",
-      "organizationName": "Nom de votre entreprise",
+      "title": "Créer l'espace de votre établissement",
+      "subtitle": "Votre établissement sera prêt en quelques minutes",
+      "organizationName": "Nom de la clinique / centre de santé",
       "city": "Ville",
       "country": "Pays",
       "firstName": "Prénom",
@@ -103,8 +94,8 @@
     "back": "Retour",
     "branding": {
       "title": "Personnalisez votre espace",
-      "subtitle": "Donnez à votre tableau de bord l'identité de votre entreprise.",
-      "logoLabel": "Logo de l'entreprise (optionnel)",
+      "subtitle": "Donnez à votre tableau de bord l'identité de votre établissement.",
+      "logoLabel": "Logo de l'établissement (optionnel)",
       "logoHint": "PNG, JPEG, WEBP ou SVG, 2 Mo maximum",
       "logoUploading": "Envoi du logo…",
       "colorLabel": "Couleur de marque",
@@ -127,7 +118,7 @@
     },
     "welcome": {
       "title": "Bienvenue, {name}",
-      "subtitle": "Votre espace est prêt. Voici un récapitulatif de votre entreprise.",
+      "subtitle": "Votre espace est prêt. Voici un récapitulatif de votre établissement.",
       "planLabel": "Offre",
       "membersLabel": "Membres de l'équipe",
       "cta": "Accéder à mon tableau de bord"

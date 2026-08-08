@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { OrgPlan, Role } from "@prisma/client";
+import type { OrgPlan, Role, RoomType } from "@prisma/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth.store";
@@ -17,13 +17,27 @@ import { Badge } from "@/components/ui/badge";
 import { MfaCard } from "@/components/settings/mfa-card";
 import { Check } from "lucide-react";
 
-const ALL_ROLES: Role[] = ["ADMIN", "COMPTABLE", "CAISSIER"];
+const ALL_ROLES: Role[] = ["ADMIN", "SECRETAIRE", "MEDECIN", "INFIRMIER", "PHARMACIEN", "BIOLOGISTE", "CAISSIER", "COMPTABLE", "RH"];
 
 const ROLE_LABEL: Record<Role, string> = {
   ADMIN: "Admin",
-  COMPTABLE: "Comptable",
+  SECRETAIRE: "Secrétaire",
+  MEDECIN: "Médecin",
+  INFIRMIER: "Infirmier",
+  PHARMACIEN: "Pharmacien",
+  BIOLOGISTE: "Biologiste",
   CAISSIER: "Caissier",
+  COMPTABLE: "Comptable",
+  RH: "RH",
 };
+
+const ROOM_TYPES: { value: RoomType; label: string }[] = [
+  { value: "CHAMBRE_SIMPLE", label: "Chambre simple" },
+  { value: "CHAMBRE_DOUBLE", label: "Chambre double" },
+  { value: "BLOC_OPERATOIRE", label: "Bloc opératoire" },
+  { value: "URGENCES", label: "Urgences" },
+  { value: "SOINS_INTENSIFS", label: "Soins intensifs" },
+];
 
 interface Organization {
   id: string;
@@ -47,6 +61,26 @@ interface TeamMember {
   isActive: boolean;
   lastLoginAt: string | null;
   totpEnabled: boolean;
+  department: { id: string; name: string } | null;
+}
+
+interface Bed {
+  id: string;
+  numero: string;
+}
+
+interface RoomWithBeds {
+  id: string;
+  numero: string;
+  type: RoomType;
+  beds: Bed[];
+}
+
+interface DepartmentWithRooms {
+  id: string;
+  name: string;
+  code: string;
+  rooms: RoomWithBeds[];
 }
 
 // Dérivé directement de lib/rbac.ts — cette section ne fait qu'afficher la
@@ -65,6 +99,7 @@ export default function ParametresPage() {
 
   const canManageOrg = !!user && PERMISSIONS.organisation.manage.includes(user.role);
   const canManageEquipe = !!user && PERMISSIONS.equipe.manage.includes(user.role);
+  const canManageLocaux = !!user && PERMISSIONS.locaux.manage.includes(user.role);
 
   // ---- Organisation ----
   const { data: orgData } = useQuery({
@@ -91,7 +126,7 @@ export default function ParametresPage() {
     enabled: canManageEquipe,
   });
   const [showInviteForm, setShowInviteForm] = useState(false);
-  const [inviteForm, setInviteForm] = useState({ email: "", firstName: "", lastName: "", role: "CAISSIER" as Role });
+  const [inviteForm, setInviteForm] = useState({ email: "", firstName: "", lastName: "", role: "SECRETAIRE" as Role });
   const [teamError, setTeamError] = useState<string | null>(null);
   const [createdCredentials, setCreatedCredentials] = useState<{ email: string; tempPassword: string } | null>(null);
 
@@ -99,7 +134,7 @@ export default function ParametresPage() {
     mutationFn: () => api.post<{ user: TeamMember; tempPassword: string }>("/api/team", inviteForm),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["team"] });
-      setInviteForm({ email: "", firstName: "", lastName: "", role: "CAISSIER" });
+      setInviteForm({ email: "", firstName: "", lastName: "", role: "SECRETAIRE" });
       setShowInviteForm(false);
       setTeamError(null);
       setCreatedCredentials({ email: result.user.email, tempPassword: result.tempPassword });
@@ -116,11 +151,52 @@ export default function ParametresPage() {
     onError: (e) => setTeamError(e instanceof ApiError ? e.message : "Une erreur est survenue"),
   });
 
+  // ---- Chambres & lits ----
+  const { data: locauxData } = useQuery({
+    queryKey: ["hospitalisation", "locaux"],
+    queryFn: () => api.get<{ departments: DepartmentWithRooms[] }>("/api/hospitalisation/locaux"),
+    enabled: canManageLocaux,
+  });
+  const [showDeptForm, setShowDeptForm] = useState(false);
+  const [deptForm, setDeptForm] = useState({ name: "", code: "" });
+  const [showRoomForm, setShowRoomForm] = useState(false);
+  const [roomForm, setRoomForm] = useState({ departmentId: "", numero: "", type: "CHAMBRE_SIMPLE" as RoomType, bedCount: "2" });
+  const [locauxError, setLocauxError] = useState<string | null>(null);
+
+  const createDept = useMutation({
+    mutationFn: () => api.post("/api/hospitalisation/locaux", { kind: "DEPARTMENT", ...deptForm }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["hospitalisation", "locaux"] });
+      setDeptForm({ name: "", code: "" });
+      setShowDeptForm(false);
+      setLocauxError(null);
+    },
+    onError: (e) => setLocauxError(e instanceof ApiError ? e.message : "Une erreur est survenue"),
+  });
+
+  const createRoom = useMutation({
+    mutationFn: () =>
+      api.post("/api/hospitalisation/locaux", {
+        kind: "ROOM",
+        departmentId: roomForm.departmentId || undefined,
+        numero: roomForm.numero,
+        type: roomForm.type,
+        bedCount: Number(roomForm.bedCount),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["hospitalisation", "locaux"] });
+      setRoomForm({ departmentId: "", numero: "", type: "CHAMBRE_SIMPLE", bedCount: "2" });
+      setShowRoomForm(false);
+      setLocauxError(null);
+    },
+    onError: (e) => setLocauxError(e instanceof ApiError ? e.message : "Une erreur est survenue"),
+  });
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-bold">Paramètres</h1>
-        <p className="text-sm text-muted-foreground">Organisation, équipe et bibliothèque de rôles</p>
+        <p className="text-sm text-muted-foreground">Organisation, équipe, locaux et bibliothèque de rôles</p>
       </div>
 
       <Card>
@@ -295,6 +371,100 @@ export default function ParametresPage() {
                     </TableCell>
                   </TableRow>
                 ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {canManageLocaux && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-base">Services, chambres & lits</CardTitle>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => setShowDeptForm((v) => !v)}>{showDeptForm ? "Annuler" : "Ajouter un service"}</Button>
+              <Button size="sm" onClick={() => setShowRoomForm((v) => !v)}>{showRoomForm ? "Annuler" : "Ajouter une chambre"}</Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {locauxError && <p className="text-sm text-destructive">{locauxError}</p>}
+
+            {showDeptForm && (
+              <div className="grid grid-cols-1 gap-3 rounded-md border p-4 sm:grid-cols-3">
+                <div className="space-y-1.5">
+                  <Label>Nom du service</Label>
+                  <Input value={deptForm.name} onChange={(e) => setDeptForm({ ...deptForm, name: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Code</Label>
+                  <Input value={deptForm.code} onChange={(e) => setDeptForm({ ...deptForm, code: e.target.value.toUpperCase() })} />
+                </div>
+                <div className="flex items-end">
+                  <Button size="sm" disabled={!deptForm.name || !deptForm.code || createDept.isPending} onClick={() => createDept.mutate()}>Créer</Button>
+                </div>
+              </div>
+            )}
+
+            {showRoomForm && (
+              <div className="grid grid-cols-1 gap-3 rounded-md border p-4 sm:grid-cols-5">
+                <div className="space-y-1.5">
+                  <Label>Service</Label>
+                  <Select value={roomForm.departmentId} onChange={(e) => setRoomForm({ ...roomForm, departmentId: e.target.value })}>
+                    <option value="">Non affecté</option>
+                    {locauxData?.departments.map((d) => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Numéro</Label>
+                  <Input value={roomForm.numero} onChange={(e) => setRoomForm({ ...roomForm, numero: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Type</Label>
+                  <Select value={roomForm.type} onChange={(e) => setRoomForm({ ...roomForm, type: e.target.value as RoomType })}>
+                    {ROOM_TYPES.map((t) => (
+                      <option key={t.value} value={t.value}>{t.label}</option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Nombre de lits</Label>
+                  <Input type="number" min="1" max="20" value={roomForm.bedCount} onChange={(e) => setRoomForm({ ...roomForm, bedCount: e.target.value })} />
+                </div>
+                <div className="flex items-end">
+                  <Button size="sm" disabled={!roomForm.numero || createRoom.isPending} onClick={() => createRoom.mutate()}>Créer</Button>
+                </div>
+              </div>
+            )}
+
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Service</TableHead>
+                  <TableHead>Chambre</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Lits</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {locauxData?.departments.flatMap((dept) =>
+                  dept.rooms.length > 0
+                    ? dept.rooms.map((room) => (
+                        <TableRow key={room.id}>
+                          <TableCell className="font-medium">{dept.name}</TableCell>
+                          <TableCell>{room.numero}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{ROOM_TYPES.find((t) => t.value === room.type)?.label}</TableCell>
+                          <TableCell>{room.beds.length}</TableCell>
+                        </TableRow>
+                      ))
+                    : [
+                        <TableRow key={dept.id}>
+                          <TableCell className="font-medium">{dept.name}</TableCell>
+                          <TableCell colSpan={3} className="text-sm text-muted-foreground">Aucune chambre</TableCell>
+                        </TableRow>,
+                      ],
+                )}
               </TableBody>
             </Table>
           </CardContent>

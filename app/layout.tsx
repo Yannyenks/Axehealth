@@ -7,8 +7,8 @@ import { Providers } from "./providers";
 import { themeInitScript } from "@/lib/theme";
 
 export const metadata: Metadata = {
-  title: "AxeCompta — Comptabilité SYSCOHADA augmentée par l'IA",
-  description: "SaaS de comptabilité générale, analytique et fiscale (SYSCOHADA) avec copilote IA pour PME et cabinets comptables en Afrique",
+  title: "AxeHealth — ERP Santé",
+  description: "SaaS de gestion intégrée pour cliniques et centres de santé en Afrique",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

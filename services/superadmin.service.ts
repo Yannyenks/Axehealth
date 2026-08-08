@@ -1,4 +1,5 @@
 import { randomBytes } from "crypto";
+import { Decimal } from "@prisma/client/runtime/library";
 import type { OrgPlan } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth";
@@ -11,26 +12,33 @@ function startOfMonth(): Date {
 }
 
 // Vue plateforme: un super-admin ne charge jamais les données métier d'un
-// tenant (écritures comptables, tiers...), seulement des compteurs d'usage
-// — il n'obtient pas d'accès implicite au contenu d'une organisation qui
-// n'est pas la sienne, uniquement à des métadonnées de gestion. (L'accès
-// complet, volontaire et tracé, passe uniquement par le mode assistance —
-// voir startAssistanceSession ci-dessous.)
+// tenant (patients, factures...), seulement des compteurs d'usage et des
+// sommes agrégées — il n'obtient pas d'accès implicite au contenu d'une
+// organisation qui n'est pas la sienne, uniquement à des métadonnées de
+// gestion. (L'accès complet, volontaire et tracé, passe uniquement par le
+// mode assistance — voir startAssistanceSession ci-dessous.)
 export async function listOrganizationsWithUsage() {
-  const organizations = await prisma.organization.findMany({
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      isActive: true,
-      plan: true,
-      createdAt: true,
-      // Un compte support (assistance) ne doit jamais gonfler le compteur
-      // d'utilisateurs vu par la plateforme ou par le client.
-      _count: { select: { users: { where: { isSupportAccount: false } }, journalEntries: true } },
-    },
-  });
+  const from = startOfMonth();
+
+  const [organizations, revenueByOrg] = await Promise.all([
+    prisma.organization.findMany({
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        isActive: true,
+        plan: true,
+        createdAt: true,
+        // Un compte support (assistance) ne doit jamais gonfler le compteur
+        // d'utilisateurs vu par la plateforme ou par le client.
+        _count: { select: { users: { where: { isSupportAccount: false } }, patients: true } },
+      },
+    }),
+    prisma.payment.groupBy({ by: ["organizationId"], where: { validatedAt: { gte: from } }, _sum: { montant: true } }),
+  ]);
+
+  const revenueByOrgId = new Map(revenueByOrg.map((r) => [r.organizationId, r._sum.montant ?? new Decimal(0)]));
 
   return organizations.map((org) => ({
     id: org.id,
@@ -40,7 +48,11 @@ export async function listOrganizationsWithUsage() {
     plan: org.plan,
     createdAt: org.createdAt,
     utilisateurs: org._count.users,
-    ecritures: org._count.journalEntries,
+    patients: org._count.patients,
+    // Volume d'affaires réellement encaissé (paiements validés) depuis le
+    // début du mois courant — pas une donnée simulée, contrairement au MRR
+    // plateforme (voir getPlatformKpis).
+    caEncaisseMois: (revenueByOrgId.get(org.id) ?? new Decimal(0)).toString(),
   }));
 }
 
@@ -65,10 +77,10 @@ export async function setOrganizationPlan(organizationId: string, plan: OrgPlan)
 // organisation (email déterministe → idempotent), utilisé uniquement pour
 // les sessions d'assistance (voir app/api/superadmin/organisations/[id]/assistance).
 // Comme ce User appartient réellement à l'organisation, toute la logique
-// RBAC/écritures existante (assertSameOrganization, décompte d'admins
-// actifs, etc.) continue de fonctionner sans aucune modification.
+// RBAC/écritures existante (assertSameOrganization, cashierId, décompte
+// d'admins actifs, etc.) continue de fonctionner sans aucune modification.
 export async function getOrCreateSupportUser(organizationId: string) {
-  const email = `support+${organizationId}@axecompta.internal`;
+  const email = `support+${organizationId}@axehealth.internal`;
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return existing;
@@ -84,7 +96,7 @@ export async function getOrCreateSupportUser(organizationId: string) {
       email,
       passwordHash,
       firstName: "Support",
-      lastName: "AxeCompta",
+      lastName: "AxeHealth",
       role: "ADMIN",
       isSupportAccount: true,
     },
@@ -99,22 +111,25 @@ export interface PlatformKpis {
   newOrganizationsThisMonth: number;
   planBreakdown: { plan: OrgPlan; count: number }[];
   mrrEstimateUsd: number;
+  platformRevenueThisMonth: string;
   signupsByMonth: { month: string; count: number }[];
 }
 
 // KPI de pilotage plateforme. mrrEstimateUsd est une estimation déclarative
-// (nb d'organisations actives par offre × prix indicatif de lib/plans.ts) —
-// aucun paiement réel n'est branché (voir README, scaffold commercial).
+// (nb d'établissements actifs par offre × prix indicatif de lib/plans.ts) —
+// aucun paiement réel n'est branché, contrairement à platformRevenueThisMonth
+// qui est une somme réelle des paiements validés tous établissements confondus.
 export async function getPlatformKpis(): Promise<PlatformKpis> {
   const from = startOfMonth();
   const sixMonthsAgo = new Date(from.getFullYear(), from.getMonth() - 5, 1);
 
-  const [totalOrgs, activeOrgs, byPlan, totalUsers, newOrgsThisMonth, recentOrgs] = await Promise.all([
+  const [totalOrgs, activeOrgs, byPlan, totalUsers, newOrgsThisMonth, platformRevenue, recentOrgs] = await Promise.all([
     prisma.organization.count(),
     prisma.organization.count({ where: { isActive: true } }),
     prisma.organization.groupBy({ by: ["plan"], where: { isActive: true }, _count: true }),
     prisma.user.count({ where: { isSupportAccount: false } }),
     prisma.organization.count({ where: { createdAt: { gte: from } } }),
+    prisma.payment.aggregate({ where: { validatedAt: { gte: from } }, _sum: { montant: true } }),
     prisma.organization.findMany({ where: { createdAt: { gte: sixMonthsAgo } }, select: { createdAt: true } }),
   ]);
 
@@ -145,6 +160,7 @@ export async function getPlatformKpis(): Promise<PlatformKpis> {
     newOrganizationsThisMonth: newOrgsThisMonth,
     planBreakdown: PLAN_DEFINITIONS.map((plan) => ({ plan: plan.id, count: countByPlan.get(plan.id) ?? 0 })),
     mrrEstimateUsd,
+    platformRevenueThisMonth: (platformRevenue._sum.montant ?? new Decimal(0)).toString(),
     signupsByMonth,
   };
 }

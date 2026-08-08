@@ -1,6 +1,6 @@
 {
   "Common": {
-    "brand": "AxeCompta",
+    "brand": "AxeHealth",
     "loading": "A carregar…"
   },
   "Landing": {
@@ -8,37 +8,28 @@
       "features": "Funcionalidades",
       "pricing": "Preços",
       "login": "Entrar",
-      "cta": "Criar o meu espaço"
+      "cta": "Criar a minha clínica"
     },
     "hero": {
-      "eyebrow": "Contabilidade SYSCOHADA de nova geração",
-      "title": "A sua contabilidade, gerida por um copiloto de IA que compreende o seu negócio.",
-      "subtitle": "A AxeCompta verifica o equilíbrio de cada lançamento, digitaliza as suas faturas com IA e oferece-lhe, desde o registo, um diagnóstico financeiro personalizado — como se tivesse um contabilista dedicado a tempo inteiro.",
-      "ctaPrimary": "Criar o meu espaço contabilístico",
+      "eyebrow": "Plataforma SaaS para clínicas e centros de saúde",
+      "title": "Gira o seu estabelecimento de saúde. Com simplicidade. Com confiança.",
+      "subtitle": "A AxeHealth reúne processos de doentes, caixa antifraude, farmácia, internamento, RH e faturação num único espaço, adaptado ao seu estabelecimento.",
+      "ctaPrimary": "Criar o meu estabelecimento",
       "ctaSecondary": "Entrar",
-      "ctaHint": "Não é necessário cartão de crédito — auditoria de IA incluída no registo"
-    },
-    "howItWorks": {
-      "title": "Três etapas para uma visão financeira clara",
-      "subtitle": "Do registo a um painel personalizado, em poucos minutos.",
-      "steps": {
-        "step1": { "title": "Crie o seu espaço", "description": "Configure a sua empresa em menos de dois minutos, sem compromisso." },
-        "step2": { "title": "Responda à auditoria de IA", "description": "Algumas perguntas simples, como uma entrevista com um contabilista a conhecer o seu negócio." },
-        "step3": { "title": "Gira a partir do seu painel", "description": "Prioridades personalizadas, um plano de contas pronto a usar e um copiloto sempre disponível." }
-      }
+      "ctaHint": "Não é necessário cartão de crédito para começar"
     },
     "features": {
-      "title": "Tudo o que a sua empresa precisa para uma contabilidade fiável",
+      "title": "Tudo o que a sua clínica precisa, num só lugar",
       "subtitle": "Cada membro da equipa vê apenas os módulos que lhe dizem respeito.",
       "items": {
-        "ecritures": { "title": "Lançamentos sempre equilibrados", "description": "Cada lançamento contabilístico é bloqueado se o débito e o crédito não coincidirem ao cêntimo." },
-        "auditIa": { "title": "Diagnóstico financeiro por IA", "description": "Uma auditoria conversacional no registo para um painel personalizado desde o primeiro dia." },
-        "ocr": { "title": "Digitalização inteligente de faturas", "description": "Fotografe um recibo ou fatura — a IA propõe o lançamento contabilístico SYSCOHADA correspondente." },
-        "copilote": { "title": "Copiloto financeiro disponível 24/7", "description": "Coloque questões contabilísticas ou fiscais a qualquer momento, em qualquer ecrã." },
-        "planComptable": { "title": "Plano de contas à medida", "description": "Contas, diários, terceiros e centros de custo adaptados à realidade da sua atividade." },
-        "audit": { "title": "Registo de auditoria imutável", "description": "Cada lançamento validado fica registado e nunca mais pode ser alterado." },
-        "multiEntreprise": { "title": "Multi-empresa e funções", "description": "Um espaço isolado e personalizado por empresa, com acessos precisos por função." },
-        "offline": { "title": "Modo offline", "description": "Os registos continuam a funcionar mesmo com falhas de rede, sincronizando automaticamente depois." }
+        "patients": { "title": "Processos de doentes (DPI)", "description": "Histórico clínico, alergias e consultas, centralizados e encriptados." },
+        "caisse": { "title": "Caixa antifraude", "description": "Dupla validação obrigatória em cada pagamento recebido." },
+        "pharmacie": { "title": "Farmácia e stock", "description": "Gestão de lotes em FEFO, alertas de validade e de rutura." },
+        "hospitalisation": { "title": "Internamento em tempo real", "description": "Mapa de camas, admissões, transferências e registo de enfermagem." },
+        "rh": { "title": "RH e escalas", "description": "Turnos, pedidos de férias e folha de pagamento da equipa de saúde." },
+        "audit": { "title": "Registo de auditoria imutável", "description": "Rastreabilidade completa de todas as ações sensíveis." },
+        "offline": { "title": "Modo offline", "description": "Os registos continuam a funcionar mesmo com falhas de rede." },
+        "multiEtablissement": { "title": "Multi-estabelecimento e funções", "description": "Um espaço isolado e personalizado para cada estabelecimento." }
       }
     },
     "pricing": {
@@ -47,26 +38,26 @@
       "cta": "Começar com {plan}"
     },
     "footer": {
-      "tagline": "SaaS de contabilidade geral, analítica e fiscal (SYSCOHADA) potenciado por IA.",
+      "tagline": "ERP de gestão integrada para clínicas e centros de saúde.",
       "rights": "Todos os direitos reservados."
     }
   },
   "Plans": {
-    "STARTER": { "name": "Starter", "tagline": "Para começar com uma equipa pequena", "highlights": ["Até 5 contas", "Contabilidade, terceiros e copiloto de IA", "Suporte por email"] },
-    "PRO": { "name": "Pro", "tagline": "Para uma empresa em crescimento", "highlights": ["Até 20 contas", "Imobilizado e reconciliação bancária", "Suporte prioritário"] },
-    "ENTERPRISE": { "name": "Enterprise", "tagline": "Para um grupo multi-entidade", "highlights": ["Contas ilimitadas", "Consolidação multi-empresa", "Acompanhamento dedicado"] },
+    "STARTER": { "name": "Starter", "tagline": "Para começar com uma equipa pequena", "highlights": ["Até 5 contas", "Todos os módulos clínicos", "Suporte por email"] },
+    "PRO": { "name": "Pro", "tagline": "Para uma clínica em crescimento", "highlights": ["Até 20 contas", "Comparação entre clínicas", "Suporte prioritário"] },
+    "ENTERPRISE": { "name": "Enterprise", "tagline": "Para uma rede de estabelecimentos", "highlights": ["Contas ilimitadas", "Rede de clínicas (grupo)", "Acompanhamento dedicado"] },
     "maxUsers": "{count} contas",
     "maxUsersUnlimited": "Contas ilimitadas"
   },
   "Auth": {
     "login": {
       "title": "Entrar no seu espaço",
-      "subtitle": "Aceda ao painel da sua empresa",
+      "subtitle": "Aceda ao painel do seu estabelecimento",
       "email": "Email",
       "password": "Palavra-passe",
       "submit": "Entrar",
       "submitting": "A entrar…",
-      "noAccount": "Nova empresa?",
+      "noAccount": "Nova clínica?",
       "createSpace": "Criar um espaço",
       "invalidCredentials": "Credenciais inválidas",
       "locked": "Conta temporariamente bloqueada",
@@ -78,9 +69,9 @@
       "mfaInvalid": "Código inválido ou expirado"
     },
     "signup": {
-      "title": "Crie o espaço da sua empresa",
-      "subtitle": "O seu espaço estará pronto em poucos minutos, diagnóstico de IA incluído",
-      "organizationName": "Nome da sua empresa",
+      "title": "Crie o espaço do seu estabelecimento",
+      "subtitle": "O seu estabelecimento estará pronto em poucos minutos",
+      "organizationName": "Nome da clínica / centro de saúde",
       "city": "Cidade",
       "country": "País",
       "firstName": "Nome próprio",
@@ -103,8 +94,8 @@
     "back": "Voltar",
     "branding": {
       "title": "Personalize o seu espaço",
-      "subtitle": "Dê ao seu painel a identidade da sua empresa.",
-      "logoLabel": "Logótipo da empresa (opcional)",
+      "subtitle": "Dê ao seu painel a identidade do seu estabelecimento.",
+      "logoLabel": "Logótipo do estabelecimento (opcional)",
       "logoHint": "PNG, JPEG, WEBP ou SVG, máximo 2 MB",
       "logoUploading": "A enviar o logótipo…",
       "colorLabel": "Cor da marca",
@@ -127,7 +118,7 @@
     },
     "welcome": {
       "title": "Bem-vindo(a), {name}",
-      "subtitle": "O seu espaço está pronto. Aqui está um resumo da sua empresa.",
+      "subtitle": "O seu espaço está pronto. Aqui está um resumo do seu estabelecimento.",
       "planLabel": "Plano",
       "membersLabel": "Membros da equipa",
       "cta": "Aceder ao meu painel"
