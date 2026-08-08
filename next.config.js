@@ -14,6 +14,12 @@ const nextConfig = {
     // (Vercel: "No native build was found for platform=linux..."). Il faut
     // qu'il reste un require() direct vers node_modules au runtime.
     serverComponentsExternalPackages: ["argon2"],
+    // Le traçage de fichiers de Vercel (@vercel/nft) ne détecte pas le
+    // node-gyp-build dynamique d'argon2 et exclut son binaire .node du
+    // bundle de fonction — on force son inclusion explicitement.
+    outputFileTracingIncludes: {
+      "/api/**/*": ["./node_modules/argon2/prebuilds/**/*"],
+    },
   },
 };
 
