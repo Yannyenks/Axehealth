@@ -19,11 +19,13 @@ import {
   FlaskConical,
   LogOut,
   Network,
+  Siren,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth.store";
 import { PERMISSIONS } from "@/lib/rbac";
+import { PreConsultationRougeBadge } from "@/components/preconsultation-rouge-badge";
 
 interface NavItem {
   href: string;
@@ -52,6 +54,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Soins",
     items: [
       { href: "/patients", label: "Patients (DPI)", icon: Users, roles: PERMISSIONS.patients.read },
+      { href: "/preconsultations", label: "Pré-consultations IA", icon: Siren, roles: PERMISSIONS.preconsultations.read },
       { href: "/consultations", label: "Consultations", icon: Stethoscope, roles: PERMISSIONS.consultations.read },
       { href: "/laboratoire", label: "Laboratoire", icon: FlaskConical, roles: PERMISSIONS.laboratoire.read },
       { href: "/hospitalisation", label: "Hospitalisation", icon: BedDouble, roles: PERMISSIONS.hospitalisation.read },
@@ -136,6 +139,7 @@ export function AppSidebar() {
                   >
                     <item.icon className="h-4 w-4" />
                     {item.label}
+                    {item.href === "/preconsultations" && <PreConsultationRougeBadge />}
                   </Link>
                 );
               })}

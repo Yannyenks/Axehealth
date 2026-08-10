@@ -52,30 +52,31 @@ model Organization {
   groupId String?
   groupe  OrganizationGroup? @relation(fields: [groupId], references: [id])
 
-  users            User[]
-  patients         Patient[]
-  departments      Department[]
-  consultations    Consultation[]
-  appointments     Appointment[]
-  invoices         Invoice[]
-  payments         Payment[]
-  insuranceClaims  InsuranceClaim[]
-  stockItems       StockItem[]
-  stockMovements   StockMovement[]
-  rooms            Room[]
-  beds             Bed[]
-  hospitalizations Hospitalization[]
-  shifts           Shift[]
-  payrolls         Payroll[]
-  auditLogs        AuditLog[]
-  cashRegisters     CashRegister[]
-  cashSessions      CashSession[]
-  insuranceProviders InsuranceProvider[]
-  alertRules        AlertRule[]
-  creditNotes       CreditNote[]
-  incidents         Incident[]
-  leaveRequests     LeaveRequest[]
-  patientSatisfactions PatientSatisfaction[]
+  users                   User[]
+  patients                Patient[]
+  departments             Department[]
+  consultations           Consultation[]
+  appointments            Appointment[]
+  invoices                Invoice[]
+  payments                Payment[]
+  insuranceClaims         InsuranceClaim[]
+  stockItems              StockItem[]
+  stockMovements          StockMovement[]
+  rooms                   Room[]
+  beds                    Bed[]
+  hospitalizations        Hospitalization[]
+  shifts                  Shift[]
+  payrolls                Payroll[]
+  auditLogs               AuditLog[]
+  cashRegisters           CashRegister[]
+  cashSessions            CashSession[]
+  insuranceProviders      InsuranceProvider[]
+  alertRules              AlertRule[]
+  creditNotes             CreditNote[]
+  incidents               Incident[]
+  leaveRequests           LeaveRequest[]
+  patientSatisfactions    PatientSatisfaction[]
+  preConsultationSessions PreConsultationSession[]
 
   @@index([slug])
 }
@@ -109,7 +110,7 @@ model User {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  email        String  @unique
+  email        String      @unique
   passwordHash String // Argon2id
   pinHash      String? // PIN caisse (clôture, empreinte numérique de session)
   firstName    String
@@ -119,11 +120,11 @@ model User {
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id])
 
-  isActive      Boolean   @default(true)
-  lastLoginAt   DateTime?
-  refreshToken  String? // dernier refresh token émis (rotation)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  refreshToken String? // dernier refresh token émis (rotation)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   // Authentification à deux facteurs (TOTP, RFC 6238). totpSecret est posé
   // dès le lancement de l'activation mais totpEnabled ne passe à true
@@ -152,23 +153,24 @@ model User {
   // par le client (services/team.service.ts).
   isSupportAccount Boolean @default(false)
 
-  consultationsAsMedecin Consultation[]     @relation("MedecinConsultations")
-  prescriptions          Prescription[]
-  appointments           Appointment[]      @relation("AppointmentPractitioner")
-  invoicesCreated        Invoice[]          @relation("InvoiceCreatedBy")
-  paymentsReceived       Payment[]          @relation("PaymentCashier")
-  paymentsValidated      Payment[]          @relation("PaymentValidator")
-  cashSessions           CashSession[]
-  nursingNotes           NursingNote[]
-  shifts                 Shift[]
-  payroll                Payroll[]
-  auditLogs              AuditLog[]
-  stockMovements         StockMovement[]
-  alertRulesCreated      AlertRule[]
-  creditNotesIssued      CreditNote[]
-  incidentsDeclared      Incident[]
-  leaveRequests          LeaveRequest[] @relation("LeaveRequester")
-  leavesApproved         LeaveRequest[] @relation("LeaveApprover")
+  consultationsAsMedecin   Consultation[]           @relation("MedecinConsultations")
+  prescriptions            Prescription[]
+  appointments             Appointment[]            @relation("AppointmentPractitioner")
+  invoicesCreated          Invoice[]                @relation("InvoiceCreatedBy")
+  paymentsReceived         Payment[]                @relation("PaymentCashier")
+  paymentsValidated        Payment[]                @relation("PaymentValidator")
+  cashSessions             CashSession[]
+  nursingNotes             NursingNote[]
+  shifts                   Shift[]
+  payroll                  Payroll[]
+  auditLogs                AuditLog[]
+  stockMovements           StockMovement[]
+  alertRulesCreated        AlertRule[]
+  creditNotesIssued        CreditNote[]
+  incidentsDeclared        Incident[]
+  leaveRequests            LeaveRequest[]           @relation("LeaveRequester")
+  leavesApproved           LeaveRequest[]           @relation("LeaveApprover")
+  preConsultationsReviewed PreConsultationSession[] @relation("PreConsultationReviewedBy")
 
   @@index([organizationId])
   @@index([organizationId, role])
@@ -182,10 +184,10 @@ model Department {
   name String // Consultation, Labo, Pharmacie, Hospitalisation, ...
   code String
 
-  users         User[]
-  rooms         Room[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  users     User[]
+  rooms     Room[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([organizationId, code])
   @@index([organizationId])
@@ -206,7 +208,7 @@ model Patient {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   patientNumber String // ID national / matricule interne
-  qrCode        String  @unique @default(cuid())
+  qrCode        String   @unique @default(cuid())
   firstName     String
   lastName      String
   sexe          Sexe
@@ -222,7 +224,7 @@ model Patient {
   // {familiaux, chirurgicaux, medicaux} chiffré en base, jamais en clair.
   // Colonne String (pas Json) car le contenu déchiffrable n'est jamais
   // interrogé directement en SQL, seulement lu/écrit via le service patient.
-  antecedents String?
+  antecedents   String?
 
   satisfactions PatientSatisfaction[]
 
@@ -231,17 +233,35 @@ model Patient {
   insuranceNumber     String?
   tiersPayantRate     Int? // % pris en charge par l'assurance (ex: 80)
 
+  // Authentification patient (portail self-service, AxeHealth AI Care) —
+  // nullable car la grande majorité des fiches sont encore créées
+  // uniquement par le staff à l'accueil, sans jamais que le patient ne se
+  // connecte lui-même. Système d'authentification volontairement distinct
+  // de User/Role (voir lib/patient-auth.ts) pour ne jamais confondre une
+  // session patient avec une session staff.
+  passwordHash String? // Argon2id, posé uniquement à l'auto-inscription patient
+  refreshToken String? // dernier refresh token émis (rotation, comme User.refreshToken)
+  lastLoginAt  DateTime?
+
+  // Anti brute-force sur le portail patient — même mécanique que User (voir
+  // services/login-security.service.ts), dupliquée côté patient plutôt que
+  // partagée pour ne jamais coupler les deux systèmes d'authentification.
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  consultations    Consultation[]
-  vitalSigns       VitalSign[]
-  appointments     Appointment[]
-  invoices         Invoice[]
-  hospitalizations Hospitalization[]
-  prescriptions    Prescription[]
+  consultations           Consultation[]
+  vitalSigns              VitalSign[]
+  appointments            Appointment[]
+  invoices                Invoice[]
+  hospitalizations        Hospitalization[]
+  prescriptions           Prescription[]
+  preConsultationSessions PreConsultationSession[]
 
   @@unique([organizationId, patientNumber])
+  @@unique([organizationId, email])
   @@index([organizationId])
   @@index([organizationId, lastName, firstName])
 }
@@ -301,22 +321,23 @@ model Consultation {
   unlockedByPaymentId String?
   unlockedAt          DateTime?
 
-  motif        String?
-  diagnostic   String? // libellé
-  diagnosticCim String? // code CIM-10 / ICD-11
+  motif          String?
+  diagnostic     String? // libellé
+  diagnosticCim  String? // code CIM-10 / ICD-11
   examenClinique String?
-  notes        String?
+  notes          String?
 
-  startedAt  DateTime?
-  endedAt    DateTime?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  startedAt DateTime?
+  endedAt   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
-  vitalSigns    VitalSign[]
-  prescriptions Prescription[]
-  labRequests   LabRequest[]
-  invoiceItems  InvoiceItem[]
-  satisfactions PatientSatisfaction[]
+  vitalSigns             VitalSign[]
+  prescriptions          Prescription[]
+  labRequests            LabRequest[]
+  invoiceItems           InvoiceItem[]
+  satisfactions          PatientSatisfaction[]
+  preConsultationSession PreConsultationSession?
 
   @@index([organizationId])
   @@index([organizationId, status])
@@ -329,7 +350,7 @@ model Consultation {
 // ============================================================================
 
 model Prescription {
-  id             String  @id @default(cuid())
+  id             String       @id @default(cuid())
   consultationId String
   consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
 
@@ -355,15 +376,15 @@ model PrescriptionItem {
   stockItemId String?
   stockItem   StockItem? @relation(fields: [stockItemId], references: [id])
 
-  denomination String // nom du médicament si hors stock catalogué
-  posologie    String
-  duree        String? // ex: "7 jours"
-  quantite     Int
+  denomination     String // nom du médicament si hors stock catalogué
+  posologie        String
+  duree            String? // ex: "7 jours"
+  quantite         Int
   // Alerte d'interaction médicamenteuse calculée côté service au moment de la
   // création (vs. autres items actifs du patient) et journalisée ici.
   interactionAlert String?
 
-  dispensedAt DateTime?
+  dispensedAt   DateTime?
   dispensedById String?
 
   @@index([prescriptionId])
@@ -390,13 +411,13 @@ model LabRequest {
   consultationId String
   consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
 
-  type       LabRequestType
-  libelle    String
-  status     LabRequestStatus @default(DEMANDE)
-  resultat   String?
+  type            LabRequestType
+  libelle         String
+  status          LabRequestStatus @default(DEMANDE)
+  resultat        String?
   resultatFileUrl String?
 
-  createdAt  DateTime @default(now())
+  createdAt   DateTime  @default(now())
   completedAt DateTime?
 
   @@index([consultationId])
@@ -426,14 +447,15 @@ model Appointment {
   practitioner   User   @relation("AppointmentPractitioner", fields: [practitionerId], references: [id])
 
   scheduledAt DateTime
-  duration    Int      @default(30) // minutes
+  duration    Int               @default(30) // minutes
   status      AppointmentStatus @default(CONFIRME)
   motif       String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  consultation Consultation?
+  consultation           Consultation?
+  preConsultationSession PreConsultationSession?
 
   @@index([organizationId])
   @@index([organizationId, scheduledAt])
@@ -464,10 +486,10 @@ model Invoice {
 
   status InvoiceStatus @default(BROUILLON)
 
-  montantTotal      Decimal @db.Decimal(14, 2)
-  montantPartPatient Decimal @db.Decimal(14, 2)
+  montantTotal         Decimal @db.Decimal(14, 2)
+  montantPartPatient   Decimal @db.Decimal(14, 2)
   montantPartAssurance Decimal @default(0) @db.Decimal(14, 2)
-  montantPaye       Decimal @default(0) @db.Decimal(14, 2)
+  montantPaye          Decimal @default(0) @db.Decimal(14, 2)
 
   insuranceProviderId String?
   insuranceProvider   InsuranceProvider? @relation(fields: [insuranceProviderId], references: [id])
@@ -497,11 +519,11 @@ model InvoiceItem {
   consultationId String?
   consultation   Consultation? @relation(fields: [consultationId], references: [id])
 
-  pole        String // Consultation, Labo, Pharmacie, Hospitalisation
-  libelle     String
-  quantite    Int     @default(1)
+  pole         String // Consultation, Labo, Pharmacie, Hospitalisation
+  libelle      String
+  quantite     Int     @default(1)
   prixUnitaire Decimal @db.Decimal(14, 2)
-  montant     Decimal @db.Decimal(14, 2)
+  montant      Decimal @db.Decimal(14, 2)
 
   @@index([invoiceId])
 }
@@ -530,8 +552,8 @@ model Payment {
   cashSessionId String
   cashSession   CashSession @relation(fields: [cashSessionId], references: [id])
 
-  mode    PaymentMode
-  montant Decimal     @db.Decimal(14, 2)
+  mode      PaymentMode
+  montant   Decimal     @db.Decimal(14, 2)
   reference String? // référence transaction Mobile Money / carte
 
   cashierId String
@@ -554,10 +576,10 @@ model InsuranceProvider {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  name          String
+  name              String
   tauxPriseEnCharge Int // % par défaut (ex: 80)
-  plafondAnnuel Decimal? @db.Decimal(14, 2)
-  contact       String?
+  plafondAnnuel     Decimal? @db.Decimal(14, 2)
+  contact           String?
 
   patients Patient[]
   invoices Invoice[]
@@ -634,15 +656,15 @@ model CashSession {
 
   status CashSessionStatus @default(OUVERTE)
 
-  montantOuverture Decimal  @db.Decimal(14, 2)
+  montantOuverture        Decimal  @db.Decimal(14, 2)
   montantClotureTheorique Decimal? @db.Decimal(14, 2) // calculé
-  montantClotureReel     Decimal? @db.Decimal(14, 2) // saisi par le caissier
-  ecart                  Decimal? @db.Decimal(14, 2)
+  montantClotureReel      Decimal? @db.Decimal(14, 2) // saisi par le caissier
+  ecart                   Decimal? @db.Decimal(14, 2)
 
   pinVerifiedAt DateTime? // horodatage de la vérification PIN à la clôture
 
-  openedAt  DateTime  @default(now())
-  closedAt  DateTime?
+  openedAt DateTime  @default(now())
+  closedAt DateTime?
 
   payments Payment[]
 
@@ -665,20 +687,20 @@ model StockItem {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  code       String
-  nom        String
-  categorie  StockItemCategory
-  unite      String // boîte, flacon, comprimé...
-  prixAchat  Decimal @db.Decimal(14, 2)
-  prixVente  Decimal @db.Decimal(14, 2)
-  seuilReappro Int   @default(10)
+  code         String
+  nom          String
+  categorie    StockItemCategory
+  unite        String // boîte, flacon, comprimé...
+  prixAchat    Decimal           @db.Decimal(14, 2)
+  prixVente    Decimal           @db.Decimal(14, 2)
+  seuilReappro Int               @default(10)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  lots               StockLot[]
-  movements          StockMovement[]
-  prescriptionItems  PrescriptionItem[]
+  lots              StockLot[]
+  movements         StockMovement[]
+  prescriptionItems PrescriptionItem[]
 
   @@unique([organizationId, code])
   @@index([organizationId])
@@ -690,10 +712,10 @@ model StockLot {
   stockItemId String
   stockItem   StockItem @relation(fields: [stockItemId], references: [id], onDelete: Cascade)
 
-  numeroLot     String
-  quantite      Int
+  numeroLot      String
+  quantite       Int
   datePeremption DateTime
-  site          String // dépôt / site multi-sites
+  site           String // dépôt / site multi-sites
 
   createdAt DateTime @default(now())
 
@@ -723,9 +745,9 @@ model StockMovement {
   stockLotId String?
   stockLot   StockLot? @relation(fields: [stockLotId], references: [id])
 
-  type      StockMovementType
-  quantite  Int // positif = entrée, négatif = sortie
-  motif     String?
+  type     StockMovementType
+  quantite Int // positif = entrée, négatif = sortie
+  motif    String?
 
   createdById String
   createdBy   User   @relation(fields: [createdById], references: [id])
@@ -856,10 +878,10 @@ model Shift {
   userId String
   user   User   @relation(fields: [userId], references: [id])
 
-  startAt DateTime
-  endAt   DateTime
-  periode ShiftPeriod
-  isAstreinte Boolean @default(false)
+  startAt     DateTime
+  endAt       DateTime
+  periode     ShiftPeriod
+  isAstreinte Boolean     @default(false)
 
   createdAt DateTime @default(now())
 
@@ -889,11 +911,11 @@ model Payroll {
   periode String // "2026-08"
   type    PayrollType
 
-  salaireBrut      Decimal  @default(0) @db.Decimal(14, 2)
-  cotisationsCnps  Decimal  @default(0) @db.Decimal(14, 2)
-  retrocessionTaux Int? // % sur actes, si RETROCESSION
+  salaireBrut         Decimal @default(0) @db.Decimal(14, 2)
+  cotisationsCnps     Decimal @default(0) @db.Decimal(14, 2)
+  retrocessionTaux    Int? // % sur actes, si RETROCESSION
   retrocessionMontant Decimal @default(0) @db.Decimal(14, 2)
-  netAPayer        Decimal  @db.Decimal(14, 2)
+  netAPayer           Decimal @db.Decimal(14, 2)
 
   status PayrollStatus @default(BROUILLON)
 
@@ -917,7 +939,7 @@ model AuditLog {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   userId String?
-  user   User?  @relation(fields: [userId], references: [id])
+  user   User?   @relation(fields: [userId], references: [id])
 
   action     String // ex: "PAYMENT_VALIDATED", "CASH_SESSION_CLOSED", "PATIENT_RECORD_VIEWED"
   entityType String
@@ -964,8 +986,8 @@ model AlertRule {
   label     String
   metric    AlertMetric
   operator  AlertOperator
-  threshold Decimal @db.Decimal(14, 2)
-  isActive  Boolean @default(true)
+  threshold Decimal       @db.Decimal(14, 2)
+  isActive  Boolean       @default(true)
 
   notifyRoles Role[] // rôles destinataires de la notification in-app
 
@@ -1151,4 +1173,100 @@ model OrganizationGroup {
   name          String
   createdAt     DateTime       @default(now())
   organizations Organization[]
+}
+
+// ============================================================================
+// PRÉ-CONSULTATION IA (AxeHealth AI Care — Pilier A : triage depuis la maison)
+// ============================================================================
+
+enum TriageSeverity {
+  ROUGE // urgence absolue — orientation immédiate vers les urgences
+  ORANGE // téléconsultation / RDV rapproché recommandé
+  VERT // conseil ou RDV standard
+}
+
+enum PreConsultationStatus {
+  EN_COURS // conversation patient/IA toujours ouverte
+  EN_ATTENTE_REVUE // IA a conclu (sévérité + synthèse posées), en attente du staff
+  REVUE // un membre du staff a pris connaissance de la synthèse
+  CONVERTIE // transformée en Consultation ou en Appointment
+  ABANDONNEE // session expirée/quittée par le patient avant conclusion
+}
+
+enum PreConsultationSpeaker {
+  PATIENT
+  IA
+}
+
+// Une session = un échange conversationnel complet entre un patient et l'IA
+// de pré-consultation, aboutissant (normalement) à une classification
+// d'urgence et une synthèse clinique. Visible côté staff dès sa création
+// (pas seulement une fois EN_ATTENTE_REVUE) pour que le tableau de bord
+// établissement affiche les cas ROUGE dès qu'ils apparaissent.
+model PreConsultationSession {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  status   PreConsultationStatus @default(EN_COURS)
+  severity TriageSeverity? // posée uniquement une fois l'IA arrivée à une conclusion
+
+  // Aperçu court du motif saisi par le patient à l'ouverture — sert de
+  // libellé dans la liste staff avant ouverture du détail. Volontairement en
+  // clair (bref, pas une anamnèse) contrairement à summary/messages.
+  motifPatient String?
+
+  // Synthèse clinique structurée générée par l'IA — chiffrée au repos
+  // (AES-256-GCM, voir lib/encryption.ts) au même titre que
+  // Patient.antecedents : c'est de la PHI dérivée d'un échange clinique
+  // complet, jamais journalisée en clair (AuditLog ne stocke que le fait
+  // qu'elle existe/a changé, jamais son contenu).
+  summary String?
+
+  reviewedById String?
+  reviewedBy   User?     @relation("PreConsultationReviewedBy", fields: [reviewedById], references: [id])
+  reviewedAt   DateTime?
+
+  // Renseigné uniquement une fois la session transformée en acte réel — au
+  // plus un des deux, jamais les deux (choix fait au moment de la
+  // conversion, voir services/pre-consultation.service.ts).
+  consultationId String?       @unique
+  consultation   Consultation? @relation(fields: [consultationId], references: [id])
+  appointmentId  String?       @unique
+  appointment    Appointment?  @relation(fields: [appointmentId], references: [id])
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime? // horodatage de la conclusion IA (sévérité posée)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  messages PreConsultationMessage[]
+
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([organizationId, severity, status]) // tri ROUGE d'abord côté dashboard staff
+  @@index([patientId])
+}
+
+// Transcript conversationnel — un message par tour, patient ou IA.
+model PreConsultationMessage {
+  id        String                 @id @default(cuid())
+  sessionId String
+  session   PreConsultationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  role PreConsultationSpeaker
+
+  // Chiffré (AES-256-GCM, comme summary ci-dessus) — un message patient
+  // décrit des symptômes en langage libre, donc de la PHI au même titre que
+  // les antécédents. Colonne String (pas Json), déchiffrée uniquement à la
+  // lecture côté service, jamais interrogée en clair en SQL.
+  content String
+
+  createdAt DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([sessionId, createdAt])
 }

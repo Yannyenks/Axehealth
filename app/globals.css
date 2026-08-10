@@ -95,3 +95,23 @@
     @apply bg-background text-foreground font-body;
   }
 }
+
+/* Orbe vocal du mode voix patient (components/patient-voice-mode.tsx) —
+   respiration lente à l'écoute passive, pulsation plus marquée pendant que
+   le patient parle, ondulation pendant que l'IA répond. */
+@keyframes orb-idle {
+  0%, 100% { transform: scale(1); opacity: 0.92; }
+  50% { transform: scale(1.035); opacity: 1; }
+}
+
+@keyframes orb-listening {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 hsl(var(--primary) / 0.35); }
+  50% { transform: scale(1.09); box-shadow: 0 0 0 28px hsl(var(--primary) / 0); }
+}
+
+@keyframes orb-speaking {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.06); }
+  50% { transform: scale(0.97); }
+  75% { transform: scale(1.04); }
+}

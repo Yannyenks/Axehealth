@@ -6,6 +6,11 @@ import { ForbiddenError } from "./rbac";
 export class NotFoundError extends Error {}
 export class ConflictError extends Error {}
 export class LockedError extends Error {}
+// Une intégration externe requise n'est pas configurée / a refusé de
+// répondre — distinct d'un 500 générique car ce n'est pas un bug applicatif,
+// et le client (ex: chat de pré-consultation IA) doit pouvoir en tenir
+// compte explicitement plutôt que de recevoir une erreur opaque.
+export class ServiceUnavailableError extends Error {}
 
 // Convertit les erreurs connues (auth, RBAC, validation, métier) en réponses
 // HTTP homogènes pour toutes les routes API. Toute erreur non reconnue
@@ -25,6 +30,9 @@ export function handleApiError(error: unknown): NextResponse {
   }
   if (error instanceof LockedError) {
     return NextResponse.json({ error: "ACCOUNT_LOCKED", message: error.message }, { status: 423 });
+  }
+  if (error instanceof ServiceUnavailableError) {
+    return NextResponse.json({ error: "SERVICE_UNAVAILABLE", message: error.message }, { status: 503 });
   }
   if (error instanceof ZodError) {
     return NextResponse.json({ error: "VALIDATION_ERROR", issues: error.issues }, { status: 422 });

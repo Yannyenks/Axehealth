@@ -81,6 +81,12 @@ export const PERMISSIONS = {
   locaux: {
     manage: ["ADMIN"] as Role[], // configuration des services/chambres/lits
   },
+  preconsultations: {
+    read: ["ADMIN", "MEDECIN", "SECRETAIRE"] as Role[],
+    reviewer: ["ADMIN", "MEDECIN", "SECRETAIRE"] as Role[], // marquer "revu" = tri, pas un acte médical
+    convertirConsultation: ["ADMIN", "MEDECIN"] as Role[], // acte médical — même règle que consultations.write
+    convertirRdv: ["ADMIN", "MEDECIN", "SECRETAIRE"] as Role[], // prise de RDV = tâche d'accueil habituelle
+  },
 } as const;
 
 export class ForbiddenError extends Error {}
