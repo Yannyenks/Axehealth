@@ -104,9 +104,10 @@ export function AppSidebar() {
   const org = user.organization;
 
   return (
-    <aside className="flex h-screen w-64 flex-col overflow-y-auto bg-sidebar text-sidebar-foreground print:hidden">
+    // Colonne fixe : seule la zone de navigation défile, l'en-tête et la déconnexion restent visibles.
+    <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col overflow-hidden bg-sidebar text-sidebar-foreground print:hidden">
       {/* En-tête de marque : logo officiel, ligne de pouls, puis l'établissement */}
-      <div className="space-y-4 px-5 pb-5 pt-6">
+      <div className="shrink-0 space-y-4 px-5 pb-5 pt-6">
         <Logo tone="light" />
         <PulseLine className="h-5 w-full" />
         <div className="flex items-center gap-2.5">
@@ -125,7 +126,7 @@ export function AppSidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 space-y-5 px-3">
+      <nav className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-3 pb-4 [scrollbar-color:hsl(var(--sidebar-border))_transparent] [scrollbar-width:thin]">
         {groups.map((group) => (
           <div key={group.label}>
             <p className="eyebrow mb-1 px-3 text-[10px] text-sidebar-muted">{group.label}</p>
@@ -154,7 +155,7 @@ export function AppSidebar() {
         ))}
       </nav>
 
-      <div className="border-t border-sidebar-border px-3 py-4">
+      <div className="shrink-0 border-t border-sidebar-border px-3 py-4">
         <button
           onClick={handleLogout}
           className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
