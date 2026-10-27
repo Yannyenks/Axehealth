@@ -6,7 +6,7 @@ import { LayoutDashboard, LogOut, ShieldCheck, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth.store";
-import { Logo } from "@/components/logo";
+import { Logo } from "@/components/brand/Logo";
 
 const NAV_ITEMS = [{ href: "/super-admin", label: "Vue d'ensemble", icon: LayoutDashboard }];
 

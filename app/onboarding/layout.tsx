@@ -7,7 +7,7 @@ import { api, ApiError } from "@/lib/api-client";
 import { useAuthStore, type AuthUser } from "@/stores/auth.store";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { AssistanceBanner } from "@/components/assistance-banner";
-import { Logo } from "@/components/logo";
+import { Logo } from "@/components/brand/Logo";
 
 // Assistant d'onboarding: réservé à l'ADMIN qui vient de créer son
 // établissement, tant qu'il n'a pas été marqué comme terminé — voir

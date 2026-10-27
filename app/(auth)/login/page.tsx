@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { LocaleSwitcher } from "@/components/locale-switcher";
-import { Logo } from "@/components/logo";
+import { Logo } from "@/components/brand/Logo";
 
 export default function LoginPage() {
   const router = useRouter();

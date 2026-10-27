@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { PLAN_DEFINITIONS } from "@/lib/plans";
 import { LocaleSwitcher } from "@/components/locale-switcher";
-import { Logo, PulseLine } from "@/components/logo";
+import { Logo, PulseLine } from "@/components/brand/Logo";
 
 const FEATURE_ICONS = {
   patients: Users,

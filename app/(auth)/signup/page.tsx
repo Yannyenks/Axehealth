@@ -12,7 +12,7 @@ import { countryOptions } from "@/lib/countries";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { LocaleSwitcher } from "@/components/locale-switcher";
-import { Logo } from "@/components/logo";
+import { Logo } from "@/components/brand/Logo";
 
 export default function SignupPage() {
   const router = useRouter();

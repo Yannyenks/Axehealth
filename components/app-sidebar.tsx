@@ -26,6 +26,7 @@ import { api } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth.store";
 import { PERMISSIONS } from "@/lib/rbac";
 import { PreConsultationRougeBadge } from "@/components/preconsultation-rouge-badge";
+import { Logo, PulseLine } from "@/components/brand/Logo";
 
 interface NavItem {
   href: string;
@@ -104,25 +105,30 @@ export function AppSidebar() {
 
   return (
     <aside className="flex h-screen w-64 flex-col overflow-y-auto bg-sidebar text-sidebar-foreground print:hidden">
-      <div className="flex items-center gap-2 px-5 py-6">
-        {org?.logoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={org.logoUrl} alt="" className="h-8 w-8 rounded-md object-cover" />
-        ) : (
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
-            {(org?.name ?? "A")[0]}
+      {/* En-tête de marque : logo officiel, ligne de pouls, puis l'établissement */}
+      <div className="space-y-4 px-5 pb-5 pt-6">
+        <Logo tone="light" />
+        <PulseLine className="h-5 w-full" />
+        <div className="flex items-center gap-2.5">
+          {org?.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={org.logoUrl} alt="" className="h-8 w-8 rounded-md object-cover" />
+          ) : (
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-brand text-sm font-bold text-paper">
+              {(org?.name ?? "A")[0]}
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="truncate font-display text-sm font-semibold leading-tight text-sidebar-accent-foreground">{org?.name ?? "AxeHealth"}</p>
+            <p className="text-[11px] leading-tight text-sidebar-muted">Propulsé par AxeHealth</p>
           </div>
-        )}
-        <div className="min-w-0">
-          <p className="truncate font-display text-base font-bold leading-tight text-white">{org?.name ?? "AxeHealth"}</p>
-          <p className="text-[11px] leading-tight text-sidebar-muted">Propulsé par AxeHealth</p>
         </div>
       </div>
 
       <nav className="flex-1 space-y-5 px-3">
         {groups.map((group) => (
           <div key={group.label}>
-            <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wide text-sidebar-muted">{group.label}</p>
+            <p className="eyebrow mb-1 px-3 text-[10px] text-sidebar-muted">{group.label}</p>
             <div className="space-y-0.5">
               {group.items.map((item) => {
                 const active = pathname === item.href;
@@ -131,9 +137,9 @@ export function AppSidebar() {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      "relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                       active
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:rounded-full before:bg-sidebar-primary"
                         : "text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                     )}
                   >
