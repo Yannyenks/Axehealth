@@ -43,7 +43,7 @@ interface NavGroup {
 // Un seul groupe est affiché par défaut ("Pilotage") pour les rôles n'ayant
 // accès à rien d'autre ; les groupes vides après filtrage par rôle
 // disparaissent entièrement (jamais un titre de section sans liens dessous).
-const NAV_GROUPS: NavGroup[] = [
+export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Pilotage",
     items: [

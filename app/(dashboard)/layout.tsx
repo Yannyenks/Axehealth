@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api-client";
 import { useAuthStore, type AuthUser } from "@/stores/auth.store";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar, NAV_GROUPS } from "@/components/app-sidebar";
 import { Topbar } from "@/components/topbar";
 import { AssistanceBanner } from "@/components/assistance-banner";
 import { hexToHslTriplet, isValidHexColor } from "@/lib/color";
@@ -39,7 +39,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (needsOnboarding) router.replace("/onboarding");
   }, [needsOnboarding, router]);
 
-  if (!user || needsOnboarding) {
+  // Chaque profil n'atteint que les modules de son menu (matrice dans lib/rbac.ts).
+  // Une page hors menu n'est pas filtrée ici : son API applique déjà les droits.
+  const pathname = usePathname();
+  const modules = NAV_GROUPS.flatMap((group) => group.items);
+  const moduleAt = (path: string) => modules.find((m) => path === m.href || path.startsWith(`${m.href}/`));
+  const pathAllowed = !user || !moduleAt(pathname) || moduleAt(pathname)!.roles.includes(user.role);
+  const homeHref = user ? (modules.find((m) => m.roles.includes(user.role))?.href ?? "/dashboard") : "/dashboard";
+
+  useEffect(() => {
+    if (user && !pathAllowed) router.replace(homeHref);
+  }, [user, pathAllowed, homeHref, router]);
+
+  if (!user || needsOnboarding || !pathAllowed) {
     return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Chargement…</div>;
   }
 
