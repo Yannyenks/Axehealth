@@ -53,6 +53,8 @@
     "login": {
       "title": "Log in to your space",
       "subtitle": "Access your facility's dashboard",
+      "brandTitle": "Your health ally, for the whole team.",
+      "brandText": "Patient records, queue, cash desk, pharmacy and staff messaging, all in one place.",
       "email": "Email",
       "password": "Password",
       "submit": "Log in",

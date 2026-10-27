@@ -4,9 +4,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { Loader2, ShieldCheck } from "lucide-react";
 import { LocaleSwitcher } from "@/components/locale-switcher";
-import { Logo } from "@/components/brand/Logo";
+import { Logo, PulseLine } from "@/components/brand/Logo";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
+// Mise en page alignée sur le design system (src/routes/auth.tsx) : panneau de marque
+// sombre à gauche (desktop), formulaire à droite. Seule la présentation a changé ;
+// la logique de connexion et de vérification MFA est inchangée.
 export default function LoginPage() {
   const router = useRouter();
   const t = useTranslations("Auth.login");
@@ -70,92 +77,114 @@ export default function LoginPage() {
     router.push("/dashboard");
   }
 
-  if (challengeToken) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-muted px-4">
-        <form onSubmit={handleMfaSubmit} className="w-full max-w-sm space-y-4 rounded-lg border bg-card p-8 shadow-sm">
-          <div className="space-y-1 text-center">
-            <h1 className="font-display text-2xl font-bold text-primary">{t("mfaTitle")}</h1>
-            <p className="text-sm text-muted-foreground">{t("mfaSubtitle")}</p>
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="mfaCode" className="text-sm font-medium">{t("mfaCode")}</label>
-            <input
-              id="mfaCode"
-              required
-              autoFocus
-              value={mfaCode}
-              onChange={(e) => setMfaCode(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-center text-lg tracking-widest outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-
-          {error && <p className="text-sm text-destructive">{error}</p>}
-
-          <button type="submit" disabled={loading} className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50">
-            {t("mfaSubmit")}
-          </button>
-
-          <button type="button" onClick={() => setChallengeToken(null)} className="w-full text-center text-sm text-muted-foreground hover:underline">
-            {t("mfaBack")}
-          </button>
-        </form>
-      </main>
-    );
-  }
-
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted px-4">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 rounded-lg border bg-card p-8 shadow-sm">
-        <div className="flex items-center justify-between">
-          <Link href="/"><Logo /></Link>
-          <LocaleSwitcher />
+    <main className="grid min-h-screen bg-background lg:grid-cols-2">
+      {/* Panneau de marque : visible à partir de lg, comme dans le design system */}
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-sidebar p-12 text-sidebar-foreground lg:flex">
+        <div className="absolute inset-0 bg-gradient-brand opacity-[0.12]" aria-hidden />
+        <Logo tone="light" />
+        <div className="relative space-y-6">
+          <h2 className="font-display text-4xl font-bold leading-tight text-sidebar-accent-foreground">
+            {t("brandTitle")}
+          </h2>
+          <PulseLine className="max-w-md" />
+          <p className="max-w-md text-sidebar-foreground/70">{t("brandText")}</p>
         </div>
+        <p className="relative text-xs text-sidebar-foreground/50">© AxeHealth</p>
+      </div>
 
-        <div className="space-y-1">
-          <h1 className="font-display text-2xl font-bold">{t("title")}</h1>
-          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
+      <div className="flex flex-col items-center justify-center px-6 py-12">
+        <div className="w-full max-w-sm">
+          <div className="mb-8 flex items-center justify-between lg:justify-end">
+            <Link href="/" className="lg:hidden">
+              <Logo />
+            </Link>
+            <LocaleSwitcher />
+          </div>
+
+          {challengeToken ? (
+            <form onSubmit={handleMfaSubmit} className="space-y-5 rounded-2xl border border-border bg-card p-8 shadow-soft">
+              <div className="space-y-1 text-center">
+                <ShieldCheck className="mx-auto size-10 text-teal" />
+                <h1 className="mt-3 font-display text-2xl font-bold text-navy">{t("mfaTitle")}</h1>
+                <p className="text-sm text-muted-foreground">{t("mfaSubtitle")}</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="mfaCode">{t("mfaCode")}</Label>
+                <Input
+                  id="mfaCode"
+                  required
+                  autoFocus
+                  value={mfaCode}
+                  onChange={(e) => setMfaCode(e.target.value)}
+                  className="h-11 text-center text-lg tracking-widest"
+                />
+              </div>
+
+              {error && <p className="text-sm text-destructive">{error}</p>}
+
+              <Button type="submit" variant="brand" className="w-full" disabled={loading}>
+                {loading && <Loader2 className="animate-spin" />}
+                {t("mfaSubmit")}
+              </Button>
+
+              <button
+                type="button"
+                onClick={() => setChallengeToken(null)}
+                className="w-full text-center text-sm font-semibold text-teal hover:underline"
+              >
+                {t("mfaBack")}
+              </button>
+            </form>
+          ) : (
+            <>
+              <h1 className="font-display text-2xl font-bold text-navy">{t("title")}</h1>
+              <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
+
+              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email">{t("email")}</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    required
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="password">{t("password")}</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    required
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+
+                {error && <p className="text-sm text-destructive">{error}</p>}
+
+                <Button type="submit" variant="brand" className="w-full" disabled={loading}>
+                  {loading && <Loader2 className="animate-spin" />}
+                  {loading ? t("submitting") : t("submit")}
+                </Button>
+              </form>
+
+              <p className="mt-6 text-center text-sm text-muted-foreground">
+                {t("noAccount")}{" "}
+                <Link href="/signup" className="font-semibold text-teal hover:underline">
+                  {t("createSpace")}
+                </Link>
+              </p>
+            </>
+          )}
         </div>
-
-        <div className="space-y-2">
-          <label htmlFor="email" className="text-sm font-medium">{t("email")}</label>
-          <input
-            id="email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label htmlFor="password" className="text-sm font-medium">{t("password")}</label>
-          <input
-            id="password"
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
-
-        {error && <p className="text-sm text-destructive">{error}</p>}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
-        >
-          {loading ? t("submitting") : t("submit")}
-        </button>
-
-        <p className="text-center text-sm text-muted-foreground">
-          {t("noAccount")} <Link href="/signup" className="font-medium text-primary hover:underline">{t("createSpace")}</Link>
-        </p>
-      </form>
+      </div>
     </main>
   );
 }

@@ -53,6 +53,8 @@
     "login": {
       "title": "Connexion à votre espace",
       "subtitle": "Accédez au tableau de bord de votre établissement",
+      "brandTitle": "Votre allié santé, pour toute l'équipe.",
+      "brandText": "Dossiers patients, file d'attente, caisse, pharmacie et messagerie du personnel, au même endroit.",
       "email": "Email",
       "password": "Mot de passe",
       "submit": "Se connecter",

@@ -53,6 +53,8 @@
     "login": {
       "title": "Entrar no seu espaço",
       "subtitle": "Aceda ao painel do seu estabelecimento",
+      "brandTitle": "O seu aliado de saúde, para toda a equipa.",
+      "brandText": "Processos clínicos, fila de espera, caixa, farmácia e mensagens da equipa, no mesmo lugar.",
       "email": "Email",
       "password": "Palavra-passe",
       "submit": "Entrar",
