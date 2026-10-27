@@ -90,5 +90,6 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // brand/ et icon.png : logos publics (login, landing) — sans cette exclusion, ils seraient redirigés vers /login
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.png|brand/).*)"],
 };
