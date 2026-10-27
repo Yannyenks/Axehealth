@@ -29,6 +29,9 @@ export default function PatientLoginPage({ params }: { params: { orgSlug: string
       if (res.status === 423) {
         const body = await res.json().catch(() => null);
         setError(body?.message ?? "Compte temporairement verrouillé.");
+      } else if (res.status >= 500) {
+        // Erreur serveur (ex. secret JWT absent de l'environnement) : ne pas la présenter comme un mauvais mot de passe.
+        setError("Erreur du serveur, réessayez plus tard.");
       } else {
         setError("Email ou mot de passe incorrect.");
       }
