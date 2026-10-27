@@ -7,6 +7,7 @@ import { api, ApiError } from "@/lib/api-client";
 import { useAuthStore, type AuthUser } from "@/stores/auth.store";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { AssistanceBanner } from "@/components/assistance-banner";
+import { Logo } from "@/components/logo";
 
 // Assistant d'onboarding: réservé à l'ADMIN qui vient de créer son
 // établissement, tant qu'il n'a pas été marqué comme terminé — voir
@@ -48,7 +49,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
     <div className="min-h-screen bg-muted/40">
       <AssistanceBanner />
       <header className="flex items-center justify-between border-b bg-card px-6 py-4">
-        <span className="font-display text-xl font-bold text-primary">AxeHealth</span>
+        <Logo />
         <LocaleSwitcher />
       </header>
       <main className="mx-auto max-w-2xl px-4 py-10">{children}</main>

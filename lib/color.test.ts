@@ -7,9 +7,9 @@ describe("hexToHslTriplet", () => {
     expect(hexToHslTriplet("#ffffff")).toBe("0 0% 100%");
   });
 
-  it("convertit une couleur de marque teal proche de celle par défaut d'AxeHealth", () => {
-    // #0d9488 (teal-600) — sert de couleur par défaut au sélecteur d'onboarding.
-    expect(hexToHslTriplet("#0d9488")).toBe("175 84% 32%");
+  it("convertit le Sarcelle du logo AxeHealth, couleur par défaut du sélecteur d'onboarding", () => {
+    // #1B7F86 (Sarcelle, design system) — couleur par défaut au sélecteur d'onboarding.
+    expect(hexToHslTriplet("#1B7F86")).toBe("184 66% 32%");
   });
 
   it("rejette une couleur hex invalide", () => {

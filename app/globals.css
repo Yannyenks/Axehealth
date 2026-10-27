@@ -2,97 +2,149 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Design system AxeHealth — dérivé du logo (Logo Born Design System).
+ *
+ * Palette (issue du logo, valeurs en triplets HSL pour Tailwind) :
+ *   --ink      Encre     #0B2A3A  bleu nuit profond (début du "A")
+ *   --navy     Marine    #12384A  wordmark "AxeHealth"
+ *   --deep     Profond   #1E5866  trait médian du "A"
+ *   --teal     Sarcelle  #1B7F86  trait droit du "A"
+ *   --pulse    Pouls     #22B5B0  ligne de battement (accent)
+ *   --paper    Papier    #F4F2EE  fond chaud
+ *
+ * Les couleurs de marque sont des tokens fixes (tailwind.config.ts : ink, navy…).
+ * Les composants utilisent uniquement les classes sémantiques (bg-primary, text-muted-foreground…).
+ */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+    /* Marque (fixe, indépendante du thème) */
+    --ink: 200 69% 14%;
+    --navy: 199 61% 18%;
+    --deep: 192 55% 26%;
+    --teal: 184 66% 32%;
+    --pulse: 178 69% 42%;
+    --pulse-soft: 176 59% 89%;
+    --paper: 40 25% 96%;
+    --paper-deep: 38 21% 91%;
+    --axia: 247 60% 63%;
+
+    /* Sémantique */
+    --background: 40 25% 96%;
+    --foreground: 200 69% 14%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 200 69% 14%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 200 69% 14%;
 
-    --primary: 168 76% 34%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 199 61% 18%;
+    --primary-foreground: 40 36% 98%;
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 176 59% 89%;
+    --secondary-foreground: 192 55% 26%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 38 21% 91%;
+    --muted-foreground: 197 18% 40%;
 
-    --accent: 168 76% 94%;
-    --accent-foreground: 168 76% 20%;
+    --accent: 178 69% 42%;
+    --accent-foreground: 200 69% 14%;
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 68% 56%;
+    --destructive-foreground: 40 36% 98%;
 
-    --success: 142 71% 35%;
-    --success-foreground: 0 0% 100%;
+    --success: 160 79% 38%;
+    --success-foreground: 40 36% 98%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning: 36 78% 57%;
+    --warning-foreground: 29 75% 15%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 168 76% 34%;
+    --border: 189 18% 86%;
+    --input: 189 19% 83%;
+    --ring: 178 69% 42%;
 
-    --radius: 0.5rem;
+    --radius: 0.875rem;
 
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 96%;
-    --sidebar-primary: 168 76% 34%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 40% 18%;
-    --sidebar-accent-foreground: 210 40% 96%;
-    --sidebar-border: 222 40% 20%;
-    --sidebar-ring: 168 76% 34%;
-    --sidebar-muted: 215 20% 65%;
+    --sidebar-background: 200 69% 14%;
+    --sidebar-foreground: 189 26% 90%;
+    --sidebar-primary: 178 69% 42%;
+    --sidebar-primary-foreground: 200 69% 14%;
+    --sidebar-accent: 200 53% 19%;
+    --sidebar-accent-foreground: 40 36% 98%;
+    --sidebar-border: 200 40% 23%;
+    --sidebar-ring: 178 69% 42%;
+    --sidebar-muted: 192 17% 63%;
   }
 
   .dark {
-    --background: 222 47% 8%;
-    --foreground: 210 40% 96%;
+    --background: 201 79% 8%;
+    --foreground: 189 24% 93%;
 
-    --card: 222 45% 11%;
-    --card-foreground: 210 40% 96%;
+    --card: 200 70% 11%;
+    --card-foreground: 189 24% 93%;
 
-    --popover: 222 45% 11%;
-    --popover-foreground: 210 40% 96%;
+    --popover: 200 70% 11%;
+    --popover-foreground: 189 24% 93%;
 
-    --primary: 168 76% 42%;
-    --primary-foreground: 222 47% 8%;
+    --primary: 178 69% 42%;
+    --primary-foreground: 200 69% 14%;
 
-    --secondary: 222 40% 16%;
-    --secondary-foreground: 210 40% 96%;
+    --secondary: 192 80% 14%;
+    --secondary-foreground: 189 24% 93%;
 
-    --muted: 222 40% 16%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 200 52% 15%;
+    --muted-foreground: 192 17% 63%;
 
-    --accent: 222 40% 18%;
-    --accent-foreground: 168 76% 70%;
+    --accent: 178 69% 42%;
+    --accent-foreground: 200 69% 14%;
 
     --destructive: 0 63% 42%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 60% 30%;
+    --success: 160 60% 30%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 80% 45%;
+    --warning: 36 70% 45%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 222 40% 18%;
-    --input: 222 40% 18%;
-    --ring: 168 76% 42%;
+    --border: 200 40% 22%;
+    --input: 200 40% 25%;
+    --ring: 178 69% 42%;
   }
 
   * {
     @apply border-border;
   }
 
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+
   body {
     @apply bg-background text-foreground font-body;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display tracking-tight;
+  }
+}
+
+@layer components {
+  /* Surtitre de section : capitales espacées, typo display (ex. "PILOTAGE") */
+  .eyebrow {
+    @apply font-display text-[0.72rem] font-semibold uppercase tracking-[0.22em];
+  }
+
+  /* Surface AXIA : bordure dégradée lumineuse autour d'une carte */
+  .axia-border {
+    @apply border-[1.5px] border-transparent;
+    background:
+      linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+      linear-gradient(135deg, hsl(var(--pulse)) 0%, hsl(var(--teal)) 45%, hsl(var(--axia)) 100%) border-box;
   }
 }
 

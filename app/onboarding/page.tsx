@@ -98,7 +98,7 @@ function BrandingStep({ onNext }: { onNext: () => void }) {
     country: org?.country ?? "CM",
     phone: org?.phone ?? "",
     email: org?.email ?? "",
-    primaryColor: org?.primaryColor ?? "#0d9488",
+    primaryColor: org?.primaryColor ?? "#1B7F86",
   };
   const currentLogo = logoUrl ?? org?.logoUrl ?? null;
 

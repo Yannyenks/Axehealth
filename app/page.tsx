@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { PLAN_DEFINITIONS } from "@/lib/plans";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { Logo, PulseLine } from "@/components/logo";
 
 const FEATURE_ICONS = {
   patients: Users,
@@ -36,7 +37,7 @@ export default async function LandingPage() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <span className="font-display text-xl font-bold text-primary">AxeHealth</span>
+          <Logo />
           <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground sm:flex">
             <a href="#features" className="hover:text-foreground">{t("nav.features")}</a>
             <a href="#pricing" className="hover:text-foreground">{t("nav.pricing")}</a>
@@ -61,6 +62,7 @@ export default async function LandingPage() {
             {t("hero.eyebrow")}
           </p>
           <h1 className="font-display text-4xl font-bold tracking-tight sm:text-5xl">{t("hero.title")}</h1>
+          <PulseLine className="mx-auto mt-6 max-w-md" />
           <p className="mx-auto mt-5 max-w-2xl text-lg text-muted-foreground">{t("hero.subtitle")}</p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
@@ -142,7 +144,7 @@ export default async function LandingPage() {
       <footer className="border-t py-10">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 text-sm text-muted-foreground sm:flex-row">
           <div>
-            <p className="font-display font-semibold text-foreground">AxeHealth</p>
+            <Logo />
             <p>{t("footer.tagline")}</p>
           </div>
           <p>© {new Date().getFullYear()} AxeStack Technologies — {t("footer.rights")}</p>
