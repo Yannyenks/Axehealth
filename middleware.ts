@@ -10,6 +10,7 @@ import { jwtVerify } from "jose";
 const PUBLIC_PATHS = [
   "/login",
   "/signup",
+  "/c/", // espace de chaque clinique : accueil et connexion du personnel, avant session
   "/api/auth/login",
   "/api/auth/signup",
   "/api/auth/refresh",

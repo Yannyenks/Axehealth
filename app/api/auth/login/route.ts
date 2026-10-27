@@ -10,13 +10,24 @@ import { assertNotLocked, recordFailedLogin, recordSuccessfulLogin } from "@/ser
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
+  // Espace de la clinique (/c/<slug>/login) : si fourni, le compte doit appartenir à cette clinique.
+  organizationSlug: z.string().min(1).optional(),
 });
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password } = loginSchema.parse(await req.json());
+    const { email, password, organizationSlug } = loginSchema.parse(await req.json());
 
-    const user = await prisma.user.findUnique({ where: { email }, include: { organization: { select: { isActive: true } } } });
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { organization: { select: { isActive: true, slug: true } } },
+    });
+
+    // Même réponse que pour un mauvais mot de passe : ne jamais révéler qu'un
+    // compte existe dans une autre clinique.
+    if (organizationSlug && user?.organization.slug !== organizationSlug) {
+      return NextResponse.json({ error: "INVALID_CREDENTIALS" }, { status: 401 });
+    }
 
     // Réponse identique que l'utilisateur existe ou non, ou que ce soit le
     // compte ou son organisation qui soit désactivé — évite l'énumération
