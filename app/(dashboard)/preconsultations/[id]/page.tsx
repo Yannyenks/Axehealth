@@ -79,7 +79,7 @@ export default function PreConsultationDetailPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold">{session.patient.firstName} {session.patient.lastName}</h1>
+          <h1 className="text-2xl font-bold text-navy">{session.patient.firstName} {session.patient.lastName}</h1>
           <p className="text-sm text-muted-foreground">{session.patient.patientNumber} · Reçu le {new Date(session.startedAt).toLocaleString("fr-FR")}</p>
         </div>
         {session.severity && <Badge variant={severityVariant(session.severity)} className="text-sm">{session.severity}</Badge>}

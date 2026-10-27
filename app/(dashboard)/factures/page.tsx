@@ -78,7 +78,7 @@ export default function FacturesPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-bold">Factures</h1>
+          <h1 className="text-2xl font-bold text-navy">Factures</h1>
           <p className="text-sm text-muted-foreground">Facturation consultations, pharmacie et tiers-payant</p>
         </div>
         <Select value={status} onChange={(e) => setStatus(e.target.value)} className="w-56">

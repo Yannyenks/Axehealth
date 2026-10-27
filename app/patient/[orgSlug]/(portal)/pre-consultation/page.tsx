@@ -127,7 +127,7 @@ export default function PreConsultationChatPage() {
       <div className="mx-auto flex min-h-[70vh] max-w-lg flex-col justify-center space-y-4">
         {emergencyBanner}
         <div className="rounded-2xl border bg-card p-8 shadow-sm">
-          <h1 className="font-display text-2xl font-bold">Nouvelle pré-consultation</h1>
+          <h1 className="text-2xl font-bold text-navy">Nouvelle pré-consultation</h1>
           <p className="mt-2 text-sm text-muted-foreground">Décrivez brièvement le motif de votre consultation, puis échangez avec notre assistant IA — au clavier ou à voix haute — pour évaluer l&apos;urgence de votre situation.</p>
 
           <div className="mt-5 space-y-2">

@@ -61,6 +61,15 @@ export default {
         warning: {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
+          soft: "hsl(var(--warning-soft))",
+        },
+        critical: {
+          DEFAULT: "hsl(var(--critical))",
+          soft: "hsl(var(--critical-soft))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          soft: "hsl(var(--info-soft))",
         },
         muted: {
           DEFAULT: "hsl(var(--muted))",

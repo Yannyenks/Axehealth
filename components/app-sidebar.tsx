@@ -137,7 +137,7 @@ export function AppSidebar() {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
                       active
                         ? "bg-sidebar-accent text-sidebar-accent-foreground before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:rounded-full before:bg-sidebar-primary"
                         : "text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",

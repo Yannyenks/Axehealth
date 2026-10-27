@@ -92,7 +92,7 @@ export default async function LandingPage() {
             {featureKeys.map((key) => {
               const Icon = FEATURE_ICONS[key];
               return (
-                <div key={key} className="rounded-lg border bg-card p-5 shadow-sm">
+                <div key={key} className="rounded-2xl border border-border bg-card shadow-soft p-5 shadow-sm">
                   <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
                     <Icon className="h-5 w-5" />
                   </div>

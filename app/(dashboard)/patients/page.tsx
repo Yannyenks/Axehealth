@@ -109,7 +109,7 @@ export default function PatientsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold">Patients</h1>
+          <h1 className="text-2xl font-bold text-navy">Patients</h1>
           <p className="text-sm text-muted-foreground">Dossier patient informatisé</p>
         </div>
         <Button onClick={() => { setShowForm((v) => !v); setDuplicates(null); }}>{showForm ? "Annuler" : "Nouveau patient"}</Button>

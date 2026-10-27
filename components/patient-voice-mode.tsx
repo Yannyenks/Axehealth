@@ -208,7 +208,7 @@ export function PatientVoiceMode({ messages, onSendMessage, isSending, done, sev
           </button>
 
           {showVoicePicker && (
-            <div className="absolute bottom-full left-1/2 mb-2 max-h-72 w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2 overflow-y-auto rounded-lg border bg-card p-2 shadow-xl">
+            <div className="absolute bottom-full left-1/2 mb-2 max-h-72 w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2 overflow-y-auto rounded-2xl border border-border bg-card shadow-soft p-2 shadow-xl">
               {frenchVoices.length === 0 && otherVoices.length === 0 && <p className="p-2 text-sm text-muted-foreground">Aucune voix disponible.</p>}
               {frenchVoices.map((voice) => (
                 <VoiceOption key={voice.voiceURI} voice={voice} selected={voice.voiceURI === selectedVoiceURI} onSelect={() => { setSelectedVoiceURI(voice.voiceURI); localStorage.setItem(VOICE_STORAGE_KEY, voice.voiceURI); setShowVoicePicker(false); }} onPreview={() => speak(PREVIEW_TEXT)} />

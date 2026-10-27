@@ -29,7 +29,7 @@ export default function RapportsPage() {
     <div className="max-w-3xl space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-bold">Rapport d'activité RMA / SNIS</h1>
+          <h1 className="text-2xl font-bold text-navy">Rapport d'activité RMA / SNIS</h1>
           <p className="text-sm text-muted-foreground">
             Compteurs bruts du mois en cours — à reporter sur le formulaire statistique réglementaire local.
           </p>

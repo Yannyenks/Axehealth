@@ -6,13 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // Teintes catégorielles validées (palette de référence dataviz, ordre fixe
 // par identité de pôle — jamais par ordre d'apparition dans les données).
 const POLE_COLORS: Record<string, string> = {
-  Consultation: "#2a78d6", // slot 1 — blue
-  Laboratoire: "#eb6834", // slot 2 — orange
-  Pharmacie: "#1baf7a", // slot 3 — aqua
-  Hospitalisation: "#eda100", // slot 4 — yellow
+  Consultation: "#12384A",
+  Laboratoire: "#1B7F86",
+  Pharmacie: "#22B5B0",
+  Hospitalisation: "#E0A526",
 };
 const POLE_ORDER = ["Consultation", "Laboratoire", "Pharmacie", "Hospitalisation"];
-const FALLBACK_COLOR = "#4a3aa7"; // slot 7 — violet, pour un pôle imprévu
+const FALLBACK_COLOR = "#7A6FD0";
 
 interface DayEntry {
   date: string;
@@ -107,7 +107,7 @@ export function RevenueAreaChart({ data, poles, days }: { data: DayEntry[]; pole
                 x2={WIDTH - PAD.right}
                 y1={PAD.top + plotH * (1 - g)}
                 y2={PAD.top + plotH * (1 - g)}
-                stroke="#e1e0d9"
+                stroke="#DCE3E5"
                 strokeWidth={1}
               />
             ))}
@@ -140,7 +140,7 @@ export function RevenueAreaChart({ data, poles, days }: { data: DayEntry[]; pole
             )}
 
             {hoverIndex !== null && (
-              <line x1={xAt(hoverIndex)} x2={xAt(hoverIndex)} y1={PAD.top} y2={PAD.top + plotH} stroke="#898781" strokeWidth={1} />
+              <line x1={xAt(hoverIndex)} x2={xAt(hoverIndex)} y1={PAD.top} y2={PAD.top + plotH} stroke="#5F7A84" strokeWidth={1} />
             )}
           </svg>
 

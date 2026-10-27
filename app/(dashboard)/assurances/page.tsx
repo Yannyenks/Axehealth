@@ -107,7 +107,7 @@ export default function AssurancesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-bold">Tiers-payant & assurances</h1>
+        <h1 className="text-2xl font-bold text-navy">Tiers-payant & assurances</h1>
         <p className="text-sm text-muted-foreground">Prestataires, répartition patient/assurance, bordereaux de transmission</p>
       </div>
 

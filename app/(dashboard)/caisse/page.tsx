@@ -129,7 +129,7 @@ export default function CaissePage() {
   return (
     <div className="max-w-4xl space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-bold">Caisse</h1>
+        <h1 className="text-2xl font-bold text-navy">Caisse</h1>
         <p className="text-sm text-muted-foreground">Encaissement, double validation aveugle, clôture</p>
       </div>
 

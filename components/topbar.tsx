@@ -24,14 +24,14 @@ export function Topbar() {
   }
 
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-card px-6 print:hidden">
+    <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-border bg-background/85 px-4 backdrop-blur-md md:px-8 print:hidden">
       <form onSubmit={handleSearch} className="relative w-full max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Rechercher un patient…"
-          className="h-9 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="h-10 w-full rounded-xl border border-input bg-card pl-9 pr-3 text-sm outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring"
         />
       </form>
 
@@ -39,18 +39,18 @@ export function Topbar() {
         {user.isSuperAdmin && (
           <Link
             href="/super-admin"
-            className="flex items-center gap-1.5 rounded-md border border-warning/30 bg-warning/10 px-3 py-1.5 text-xs font-semibold text-warning hover:bg-warning/20"
+            className="flex items-center gap-1.5 rounded-xl border border-warning/40 bg-warning-soft px-3 py-1.5 text-xs font-semibold text-warning-foreground hover:brightness-95"
           >
             <ShieldCheck className="h-3.5 w-3.5" />
             Console plateforme
           </Link>
         )}
         <ThemeToggle />
-        <div className="text-right">
-          <p className="text-sm font-medium leading-tight text-foreground">{user.firstName} {user.lastName}</p>
+        <div className="hidden text-right sm:block">
+          <p className="text-sm font-semibold leading-tight text-navy dark:text-foreground">{user.firstName} {user.lastName}</p>
           <p className="text-xs leading-tight text-muted-foreground">{user.organization?.name}</p>
         </div>
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+        <div className="flex size-10 items-center justify-center rounded-full bg-gradient-brand font-display text-sm font-bold text-paper">
           {initials(user.firstName, user.lastName)}
         </div>
       </div>

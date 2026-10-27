@@ -132,7 +132,7 @@ export default function ConsultationDetailPage({ params }: { params: { id: strin
   return (
     <div className="max-w-3xl space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-bold">
+        <h1 className="text-2xl font-bold text-navy">
           {consultation.patient.firstName} {consultation.patient.lastName}
         </h1>
         <p className="text-sm text-muted-foreground">{consultation.patient.patientNumber} · Dr {consultation.medecin.lastName}</p>

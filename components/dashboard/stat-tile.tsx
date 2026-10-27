@@ -33,7 +33,7 @@ export function StatTile({ label, value, isCurrency = true, suffix, delta, href 
         <p className="text-sm text-muted-foreground">{label}</p>
         {href && <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />}
       </div>
-      <p className="mt-1 font-display text-2xl font-semibold text-foreground">{displayValue}</p>
+      <p className="mt-2 font-display text-3xl font-bold text-navy">{displayValue}</p>
       {showDelta && (
         <p className={cn("mt-1 flex items-center gap-1 text-xs font-medium", isPositive ? "text-success" : "text-destructive")}>
           {isUp ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
@@ -46,10 +46,10 @@ export function StatTile({ label, value, isCurrency = true, suffix, delta, href 
   if (href) {
     return (
       <Link href={href} className="group">
-        <Card className="transition-colors hover:border-primary/40 hover:bg-accent/40">{content}</Card>
+        <Card className="rounded-2xl border-border shadow-soft transition-colors hover:border-teal/50">{content}</Card>
       </Link>
     );
   }
 
-  return <Card>{content}</Card>;
+  return <Card className="rounded-2xl border-border shadow-soft">{content}</Card>;
 }

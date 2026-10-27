@@ -106,7 +106,7 @@ export default function LoginPage() {
             <form onSubmit={handleMfaSubmit} className="space-y-5 rounded-2xl border border-border bg-card p-8 shadow-soft">
               <div className="space-y-1 text-center">
                 <ShieldCheck className="mx-auto size-10 text-teal" />
-                <h1 className="mt-3 font-display text-2xl font-bold text-navy">{t("mfaTitle")}</h1>
+                <h1 className="mt-3 text-2xl font-bold text-navy">{t("mfaTitle")}</h1>
                 <p className="text-sm text-muted-foreground">{t("mfaSubtitle")}</p>
               </div>
 
@@ -139,7 +139,7 @@ export default function LoginPage() {
             </form>
           ) : (
             <>
-              <h1 className="font-display text-2xl font-bold text-navy">{t("title")}</h1>
+              <h1 className="text-2xl font-bold text-navy">{t("title")}</h1>
               <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
 
               <form onSubmit={handleSubmit} className="mt-6 space-y-4">

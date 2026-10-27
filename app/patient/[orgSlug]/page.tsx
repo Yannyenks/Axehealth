@@ -9,7 +9,7 @@ export default function PatientOrganizationLandingPage({ params }: { params: { o
       {(org) => (
         <div className="space-y-6 text-center">
           <div className="space-y-2">
-            <h1 className="font-display text-2xl font-bold">Pré-consultation IA</h1>
+            <h1 className="text-2xl font-bold text-navy">Pré-consultation IA</h1>
             <p className="text-sm text-muted-foreground">
               Décrivez vos symptômes depuis chez vous, avant votre venue à {org.name}. Notre assistant IA évalue l&apos;urgence de votre situation et prépare une synthèse pour l&apos;équipe médicale.
             </p>

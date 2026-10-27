@@ -29,7 +29,7 @@ export default function AuditPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-bold">Journal d'audit</h1>
+          <h1 className="text-2xl font-bold text-navy">Journal d'audit</h1>
           <p className="text-sm text-muted-foreground">Journal immuable de toutes les actions sensibles (100 dernières entrées)</p>
         </div>
         <a href={`/api/audit?format=csv&action=${encodeURIComponent(action)}`}>

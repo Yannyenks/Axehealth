@@ -195,7 +195,7 @@ export default function ParametresPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-bold">Paramètres</h1>
+        <h1 className="text-2xl font-bold text-navy">Paramètres</h1>
         <p className="text-sm text-muted-foreground">Organisation, équipe, locaux et bibliothèque de rôles</p>
       </div>
 

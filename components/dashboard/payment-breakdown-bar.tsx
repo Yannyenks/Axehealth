@@ -16,12 +16,12 @@ const MODE_LABEL: Record<string, string> = {
 };
 
 const MODE_COLOR: Record<string, string> = {
-  ESPECES: "#2a78d6", // slot 1 — blue
-  MTN_MOMO: "#eb6834", // slot 2 — orange
-  ORANGE_MONEY: "#1baf7a", // slot 3 — aqua
-  WAVE: "#eda100", // slot 4 — yellow
-  CARTE: "#e87ba4", // slot 5 — magenta
-  VIREMENT: "#4a3aa7", // slot 7 — violet
+  ESPECES: "#12384A",
+  MTN_MOMO: "#1B7F86",
+  ORANGE_MONEY: "#22B5B0",
+  WAVE: "#E0A526",
+  CARTE: "#1E5866",
+  VIREMENT: "#7A6FD0",
 };
 
 interface Entry {
@@ -54,7 +54,7 @@ export function PaymentBreakdownBar({ data }: { data: Entry[] }) {
                   className="h-full transition-opacity"
                   style={{
                     width: `${entry.pourcent}%`,
-                    backgroundColor: MODE_COLOR[entry.mode] ?? "#898781",
+                    backgroundColor: MODE_COLOR[entry.mode] ?? "#5F7A84",
                     opacity: hovered && hovered !== entry.mode ? 0.45 : 1,
                   }}
                   onMouseEnter={() => setHovered(entry.mode)}
@@ -73,7 +73,7 @@ export function PaymentBreakdownBar({ data }: { data: Entry[] }) {
                   onMouseLeave={() => setHovered(null)}
                 >
                   <span className="flex items-center gap-2 text-foreground">
-                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: MODE_COLOR[entry.mode] ?? "#898781" }} />
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: MODE_COLOR[entry.mode] ?? "#5F7A84" }} />
                     {MODE_LABEL[entry.mode] ?? entry.mode}
                   </span>
                   <span className="font-medium text-foreground">{entry.pourcent}%</span>

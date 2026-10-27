@@ -59,6 +59,11 @@
 
     --warning: 36 78% 57%;
     --warning-foreground: 29 75% 15%;
+    --warning-soft: 41 100% 90%;
+    --critical: 0 68% 56%;
+    --critical-soft: 7 100% 95%;
+    --info: 184 66% 32%;
+    --info-soft: 176 59% 89%;
 
     --border: 189 18% 86%;
     --input: 189 19% 83%;

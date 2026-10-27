@@ -105,7 +105,7 @@ export default function SuperAdminPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-bold">Console plateforme</h1>
+        <h1 className="text-2xl font-bold text-navy">Console plateforme</h1>
         <p className="text-sm text-muted-foreground">Supervision, offres et assistance des établissements abonnés à AxeHealth</p>
       </div>
 

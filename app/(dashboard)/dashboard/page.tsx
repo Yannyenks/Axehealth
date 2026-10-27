@@ -13,7 +13,7 @@ import { RevenueAreaChart } from "@/components/dashboard/revenue-area-chart";
 import { PaymentBreakdownBar } from "@/components/dashboard/payment-breakdown-bar";
 import { OccupancyByDepartment } from "@/components/dashboard/occupancy-by-department";
 import { AlertsPanel } from "@/components/dashboard/alerts-panel";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Empty, Panel } from "@/components/app/Panel";
 
 interface SatisfactionStats {
   totalReponses: number;
@@ -71,10 +71,9 @@ export default function DashboardHome() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-bold">Tableau de bord direction</h1>
-          <p className="text-sm text-muted-foreground">
-            Indicateurs consolidés en temps réel · {user?.organization?.name}
-          </p>
+          <p className="eyebrow text-teal">Pilotage · {user?.organization?.name}</p>
+          <h1 className="mt-1 text-2xl font-bold text-navy">Tableau de bord direction</h1>
+          <p className="text-sm text-muted-foreground">Indicateurs consolidés en temps réel</p>
         </div>
         <Link href="/rapports">
           <Button variant="outline">
@@ -134,24 +133,18 @@ export default function DashboardHome() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <OccupancyByDepartment data={occupationParService} />
         <AlertsPanel data={alertes} />
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Satisfaction patient (NPS)</CardTitle>
-            <p className="text-xs text-muted-foreground">Mois en cours</p>
-          </CardHeader>
-          <CardContent>
-            {satisfactionData?.stats.nps === null || satisfactionData?.stats.nps === undefined ? (
-              <p className="text-sm text-muted-foreground">Aucune réponse ce mois-ci.</p>
-            ) : (
-              <>
-                <p className="font-display text-3xl font-semibold">{satisfactionData.stats.nps}</p>
-                <p className="text-sm text-muted-foreground">
-                  {satisfactionData.stats.totalReponses} réponse{satisfactionData.stats.totalReponses > 1 ? "s" : ""} · score moyen {satisfactionData.stats.scoreMoyen}/10
-                </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
+        <Panel title="Satisfaction patient (NPS)" action={<span className="text-xs text-muted-foreground">Mois en cours</span>}>
+          {satisfactionData?.stats.nps === null || satisfactionData?.stats.nps === undefined ? (
+            <Empty>Aucune réponse ce mois-ci.</Empty>
+          ) : (
+            <>
+              <p className="font-display text-3xl font-bold text-navy">{satisfactionData.stats.nps}</p>
+              <p className="text-sm text-muted-foreground">
+                {satisfactionData.stats.totalReponses} réponse{satisfactionData.stats.totalReponses > 1 ? "s" : ""} · score moyen {satisfactionData.stats.scoreMoyen}/10
+              </p>
+            </>
+          )}
+        </Panel>
       </div>
     </div>
   );

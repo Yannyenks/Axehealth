@@ -75,7 +75,7 @@ export function PatientBrandedShell({ orgSlug, children }: { orgSlug: string; ch
             </div>
           )}
           <div>
-            <p className="font-display text-2xl font-bold">{data.organization.name}</p>
+            <p className="text-2xl font-bold text-navy">{data.organization.name}</p>
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Espace patient · AxeHealth AI Care</p>
           </div>
         </div>

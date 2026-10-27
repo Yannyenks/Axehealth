@@ -82,7 +82,7 @@ export default function AlertesPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-bold">Alertes configurables</h1>
+          <h1 className="text-2xl font-bold text-navy">Alertes configurables</h1>
           <p className="text-sm text-muted-foreground">
             Seuils définis par la direction — évalués automatiquement toutes les 15 minutes en production (Vercel Cron)
           </p>
