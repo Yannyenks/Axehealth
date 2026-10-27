@@ -17,6 +17,7 @@ import {
   BellRing,
   ShieldCheck,
   FlaskConical,
+  FileBarChart,
   LogOut,
   Network,
   Siren,
@@ -49,6 +50,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard, roles: PERMISSIONS.dashboards.read },
       { href: "/alertes", label: "Alertes", icon: BellRing, roles: PERMISSIONS.alertes.manage },
+      { href: "/rapports", label: "Rapports RMA / SNIS", icon: FileBarChart, roles: PERMISSIONS.dashboards.read },
     ],
   },
   {
