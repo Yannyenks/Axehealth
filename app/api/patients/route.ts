@@ -14,27 +14,36 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const q = searchParams.get("q")?.trim();
+    // Pagination bornée : 50 par défaut, 100 au maximum. Les valeurs hors bornes sont ramenées à la limite.
+    const limit = Math.min(Math.max(Number(searchParams.get("limit")) || 50, 1), 100);
+    const page = Math.max(Number(searchParams.get("page")) || 1, 1);
 
-    const patients = await prisma.patient.findMany({
-      where: {
-        organizationId: session.organizationId,
-        ...(q
-          ? {
-              OR: [
-                { firstName: { contains: q, mode: "insensitive" } },
-                { lastName: { contains: q, mode: "insensitive" } },
-                { patientNumber: { contains: q, mode: "insensitive" } },
-                { phone: { contains: q } },
-              ],
-            }
-          : {}),
-      },
-      include: { insuranceProvider: { select: { name: true } } },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-    });
+    const where = {
+      organizationId: session.organizationId,
+      ...(q
+        ? {
+            OR: [
+              { firstName: { contains: q, mode: "insensitive" as const } },
+              { lastName: { contains: q, mode: "insensitive" as const } },
+              { patientNumber: { contains: q, mode: "insensitive" as const } },
+              { phone: { contains: q } },
+            ],
+          }
+        : {}),
+    };
 
-    return NextResponse.json({ patients });
+    const [patients, total] = await prisma.$transaction([
+      prisma.patient.findMany({
+        where,
+        include: { insuranceProvider: { select: { name: true } } },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.patient.count({ where }),
+    ]);
+
+    return NextResponse.json({ patients, total, page, limit });
   } catch (error) {
     return handleApiError(error);
   }

@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
-import { requireRole, assertSameOrganization, PERMISSIONS } from "@/lib/rbac";
+import { requireRole, PERMISSIONS } from "@/lib/rbac";
 import { handleApiError, NotFoundError } from "@/lib/api-error";
 import { writeAuditLog, ipFromRequest } from "@/lib/audit";
 import { updatePatientSchema } from "@/lib/validations/patient";
@@ -12,12 +12,13 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const session = requireAuth(req);
     requireRole(session, PERMISSIONS.patients.read);
 
-    const patient = await prisma.patient.findUnique({
-      where: { id: params.id },
+    // Recherche scopée par établissement : un patient d'une autre clinique est
+    // indistinguable d'un identifiant inexistant (même 404, aucune fuite).
+    const patient = await prisma.patient.findFirst({
+      where: { id: params.id, organizationId: session.organizationId },
       include: { insuranceProvider: { select: { name: true } } },
     });
     if (!patient) throw new NotFoundError("Patient introuvable");
-    assertSameOrganization(session, patient.organizationId);
 
     return NextResponse.json({ patient: { ...patient, antecedents: decryptAntecedents(patient.antecedents) } });
   } catch (error) {
